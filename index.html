@@ -20,17 +20,29 @@
       --coral-dark: #b85a40;
       --sky: #6fb7d9;
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
-      --fx: 50%;
-      --fy: 50%;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
+    html, body { min-height: 100%; }
     body {
       font-family: "Gaegu", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
       color: var(--ink);
       background: var(--bg);
       min-height: 100vh;
       overflow-x: hidden;
+    }
+    .page {
+      position: relative; z-index: 9;
+      min-height: 100vh; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 32px 20px;
+      background: var(--bg);
+      opacity: 0;
+      transform-origin: left center;
+    }
+    .page.open { animation: door 1.3s var(--ease) both; }
+    @keyframes door {
+      from { opacity: 0; transform: perspective(1800px) rotateY(80deg); }
+      to { opacity: 1; transform: none; }
     }
 
     /* ── 공책 페이지 ── */
@@ -41,35 +53,27 @@
       padding: 44px 48px 36px 72px;
       border-radius: 16px;
       background-color: var(--paper);
-      background-image: repeating-linear-gradient(
-        180deg, transparent 0 35px, rgb(122 106 87 / 0.14) 35px 36px
-      );
+      background-image: repeating-linear-gradient(180deg, transparent 0 35px, rgb(122 106 87 / 0.14) 35px 36px);
       background-position: 0 44px;
       box-shadow: 0 24px 50px -24px rgb(61 49 38 / 0.45), 0 2px 0 rgb(61 49 38 / 0.04);
       text-align: center;
     }
     .board::before {
-      /* 공책 빨간 여백선 */
       content: "";
       position: absolute; top: 0; bottom: 0; left: 52px; width: 2px;
       background: rgb(224 122 95 / 0.55);
       border-radius: 2px;
     }
     .board::after {
-      /* 상단 스프링 구멍 느낌 */
       content: "";
       position: absolute; left: 0; right: 0; top: 0; height: 10px;
       border-radius: 16px 16px 0 0;
-      background: linear-gradient(90deg, var(--accent) 0 100%);
+      background: var(--accent);
       opacity: 0.85;
     }
     .date { font-size: 18px; color: var(--ink-dim); letter-spacing: 0.02em; }
     .date b { color: var(--accent-dark); font-weight: 700; }
-    .bell {
-      display: block;
-      width: 64px; height: 64px;
-      margin: 10px auto 6px;
-    }
+    .bell { display: block; width: 64px; height: 64px; margin: 10px auto 6px; }
     h1 {
       margin: 14px 0 6px;
       font-size: clamp(38px, 6vw, 58px);
@@ -82,7 +86,6 @@
       stroke-dasharray: 300; stroke-dashoffset: 300;
     }
     .tagline { font-size: 22px; color: var(--ink-dim); }
-
     .timetable { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 36px 0 30px; }
     .subject {
       position: relative;
@@ -108,7 +111,6 @@
     .subject.second .period { background: var(--sky); }
     .subject strong { display: block; margin-top: 12px; font-size: 24px; }
     .subject span.desc { display: block; margin-top: 4px; font-size: 16px; color: var(--ink-dim); }
-
     .notice {
       margin: 0 auto;
       max-width: 460px;
@@ -124,27 +126,22 @@
     .notice b { color: var(--coral-dark); }
     footer { margin-top: 28px; font-size: 15px; color: var(--ink-dim); }
 
-    /* ── 인트로 모션 그래픽 (약 5초) ── */
+    /* ── 인트로 1 ── */
     .intro {
       position: fixed; inset: 0; z-index: 12;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
-      background:
-        radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%),
-        var(--bg);
-      overflow: hidden;
-      color: var(--ink);
+      background: radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%), var(--bg);
+      overflow: hidden; color: var(--ink);
     }
     .dust {
       position: absolute; width: 4px; height: 4px; border-radius: 50%;
-      background: rgb(140 100 60 / 0.35);
-      filter: blur(0.5px);
+      background: rgb(140 100 60 / 0.35); filter: blur(0.5px);
       animation: float 6s ease-in-out infinite;
     }
-    .stage { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
+    .stage1 { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
     .ring {
       position: absolute; inset: 0; border-radius: 50%;
-      border: 2px solid rgb(242 179 61 / 0.7);
-      opacity: 0;
+      border: 2px solid rgb(242 179 61 / 0.7); opacity: 0;
     }
     .intro-bell { width: 92px; height: 92px; transform-origin: 50% 0; position: relative; }
     .intro-bell path {
@@ -163,6 +160,31 @@
       position: absolute; inset: 0; pointer-events: none; opacity: 0;
       background: radial-gradient(circle at 50% 40%, rgb(255 252 240 / 0.9), rgb(255 252 240 / 0.25) 45%, transparent 70%);
     }
+
+    /* ── 인트로 2 배경 ── */
+    .intro2 {
+      position: fixed; inset: 0; z-index: 8;
+      background: radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%), var(--bg);
+    }
+    /* ── 선생님 그림 (펜으로 그리고, 색칠하고, 왼쪽으로 이동) ── */
+    .teacher {
+      position: fixed; left: 50%; top: 50%; z-index: 10;
+      width: min(340px, 78vw); height: auto;
+      transform: translate(-50%, -50%);
+      overflow: visible; pointer-events: none;
+    }
+    .ln {
+      fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round;
+    }
+    .c { fill-opacity: 0; }
+    .halo { fill-opacity: 0; }
+    .pen { opacity: 0; }
+    .armR { transform-box: view-box; transform-origin: 262px 216px; }
+    .glow { transform-box: fill-box; transform-origin: center; transform: scale(0); }
+    .orbit { opacity: 0; transform-box: view-box; transform-origin: 343px 56px; }
+    .teacher.magic .orbit { opacity: 1; animation: spin 1.4s linear infinite; }
+
+    /* 건너뛰기 */
     .skip-btn {
       position: fixed; right: 20px; bottom: 20px; z-index: 13;
       padding: 8px 16px; border-radius: 999px; font: inherit; font-size: 15px; color: var(--ink);
@@ -170,7 +192,6 @@
     }
     .skip-btn:hover { border-color: var(--accent-dark); color: var(--accent-dark); }
 
-    /* ── 모션 ── */
     @media (prefers-reduced-motion: no-preference) {
       .intro { animation: introIn .4s ease both, curtain .8s var(--ease) 4.5s both; }
       .intro-bell path { animation: draw .9s ease .3s both; }
@@ -182,80 +203,85 @@
       .intro-title .ch { animation: chalkIn .5s var(--ease) both; animation-delay: calc(2.5s + var(--i) * 0.09s); }
       .intro-sub { animation: rise .7s var(--ease) 3.6s forwards; }
       .flash { animation: flash .9s ease 4s both; }
+      .halo { animation: haloIn .9s ease 5.6s forwards; }
+      .glow { }
+      .teacher.magic .glow { animation: glowPop .6s cubic-bezier(.2, 1.6, .4, 1) forwards; }
+      .teacher.move { animation: shrinkLeft 1.3s cubic-bezier(.6, 0, .2, 1) forwards; }
+      .skip-btn { animation: rise .6s var(--ease) .2s both, hideBtn .1s linear 13s forwards; }
 
-      .board { animation: boardIn .9s var(--ease) 4.7s both; }
-      .date { animation: rise .8s var(--ease) 5s both; }
-      h1 { animation: write 1.1s steps(18, end) 5.1s both; }
-      .underline path { animation: drawLine .9s var(--ease) 5.9s forwards; }
-      .tagline { animation: rise .8s var(--ease) 6s both; }
-      .subject:nth-child(1) { animation: pin .8s var(--ease) 6.2s both; }
-      .subject:nth-child(2) { animation: pin .8s var(--ease) 6.4s both; }
-      .notice { animation: rise .8s var(--ease) 6.6s both; }
-      footer { animation: rise .8s var(--ease) 6.8s both; }
-    }
+      .board { animation: boardIn .9s var(--ease) 0.3s both; }
+      .date { animation: rise .8s var(--ease) .5s both; }
+      h1 { animation: write 1.1s steps(18, end) .6s both; }
+      .underline path { animation: drawLine .9s var(--ease) 1.4s forwards; }
+      .tagline { animation: rise .8s var(--ease) 1.5s both; }
+      .subject:nth-child(1) { animation: pin .8s var(--ease) 1.7s both; }
+      .subject:nth-child(2) { animation: pin .8s var(--ease) 1.9s both; }
+      .notice { animation: rise .8s var(--ease) 2.1s both; }
+      footer { animation: rise .8s var(--ease) 2.3s both; }
 
-    @keyframes introIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes curtain {
-      0% { transform: none; visibility: visible; }
-      99% { transform: translateY(-100%); visibility: visible; }
-      100% { transform: translateY(-100%); visibility: hidden; }
+      @keyframes introIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes curtain {
+        0% { transform: none; visibility: visible; }
+        99% { transform: translateY(-100%); visibility: visible; }
+        100% { transform: translateY(-100%); visibility: hidden; }
+      }
+      @keyframes float {
+        0%, 100% { transform: translate(0, 0); opacity: 0.2; }
+        50% { transform: translate(18px, -26px); opacity: 0.8; }
+      }
+      @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+      @keyframes wobble {
+        0% { transform: rotate(0); }
+        15% { transform: rotate(-20deg); }
+        30% { transform: rotate(15deg); }
+        45% { transform: rotate(-10deg); }
+        60% { transform: rotate(6deg); }
+        75% { transform: rotate(-3deg); }
+        100% { transform: rotate(0); }
+      }
+      @keyframes wave { 0% { transform: scale(0.7); opacity: 0.9; } 100% { transform: scale(2.8); opacity: 0; } }
+      @keyframes chalkIn {
+        from { opacity: 0; filter: blur(8px); transform: translateY(8px) scale(1.15); }
+        to { opacity: 1; filter: blur(0); transform: none; }
+      }
+      @keyframes flash { 0% { opacity: 0; } 35% { opacity: 1; } 100% { opacity: 0; } }
+      @keyframes boardIn { from { opacity: 0; transform: translateY(40px) scale(0.97); } to { opacity: 1; transform: none; } }
+      @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+      @keyframes write { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+      @keyframes drawLine { to { stroke-dashoffset: 0; } }
+      @keyframes pin { from { opacity: 0; transform: translateX(-30px) rotate(-4deg); } to { opacity: 1; transform: none; } }
     }
-    @keyframes float {
-      0%, 100% { transform: translate(0, 0); opacity: 0.2; }
-      50% { transform: translate(18px, -26px); opacity: 0.8; }
-    }
-    @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+    @keyframes fillIn { to { fill-opacity: 1; } }
+    @keyframes haloIn { to { fill-opacity: 0.28; } }
     @keyframes fadeIn { to { opacity: 1; } }
     @keyframes hideBtn { to { opacity: 0; visibility: hidden; } }
-    @keyframes wobble {
-      0% { transform: rotate(0); }
-      15% { transform: rotate(-20deg); }
-      30% { transform: rotate(15deg); }
-      45% { transform: rotate(-10deg); }
-      60% { transform: rotate(6deg); }
-      75% { transform: rotate(-3deg); }
-      100% { transform: rotate(0); }
+    @keyframes glowPop {
+      0% { transform: scale(0); }
+      70% { transform: scale(1.35); }
+      100% { transform: scale(1); }
     }
-    @keyframes wave {
-      0% { transform: scale(0.7); opacity: 0.9; }
-      100% { transform: scale(2.8); opacity: 0; }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes shrinkLeft {
+      from { transform: translate(-50%, -50%) scale(1); }
+      to { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(var(--ds, 0.5)); }
     }
-    @keyframes chalkIn {
-      from { opacity: 0; filter: blur(8px); transform: translateY(8px) scale(1.15); }
-      to { opacity: 1; filter: blur(0); transform: none; }
-    }
-    @keyframes flash {
-      0% { opacity: 0; }
-      35% { opacity: 1; }
-      100% { opacity: 0; }
-    }
-    @keyframes boardIn {
-      from { opacity: 0; transform: translateY(40px) scale(0.97); }
-      to { opacity: 1; transform: none; }
-    }
-    @keyframes rise {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: none; }
-    }
-    @keyframes write {
-      from { clip-path: inset(0 100% 0 0); }
-      to { clip-path: inset(0 0 0 0); }
-    }
-    @keyframes drawLine { to { stroke-dashoffset: 0; } }
-    @keyframes pin {
-      from { opacity: 0; transform: translateX(-30px) rotate(-4deg); }
-      to { opacity: 1; transform: none; }
+    @keyframes flourish {
+      0% { transform: rotate(0deg); }
+      25% { transform: rotate(-14deg); }
+      50% { transform: rotate(10deg); }
+      75% { transform: rotate(-6deg); }
+      100% { transform: rotate(0deg); }
     }
 
-    /* 건너뛰기 */
-    .skip .intro, .skip .intro2, .skip .skip-btn { display: none !important; }
+    /* 건너뛰기: 인트로를 모두 건너뛰고 페이지 바로 표시 */
+    .skip .intro, .skip .intro2, .skip .teacher, .skip .skip-btn { display: none !important; }
     .skip *, .skip *::before, .skip *::after { animation: none !important; }
+    .skip .page { opacity: 1 !important; transform: none !important; }
     .skip .underline path { stroke-dashoffset: 0; }
-    .skip .page { clip-path: none; }
 
     @media (prefers-reduced-motion: reduce) {
-      .intro, .intro2, .skip-btn { display: none; }
-      .page { clip-path: none; }
+      .intro, .intro2, .teacher, .skip-btn { display: none; }
+      .page { opacity: 1; transform: none; }
       .underline path { stroke-dashoffset: 0; }
     }
 
@@ -265,65 +291,11 @@
       .timetable { grid-template-columns: 1fr; }
       .tagline { font-size: 19px; }
     }
-
-    /* ── 두 번째 인트로: 선생님 드로잉 + 마법 ── */
-    .intro2 {
-      position: fixed; inset: 0; z-index: 8;
-      display: flex; align-items: center; justify-content: center;
-      background: radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%), var(--bg);
-      overflow: hidden;
-    }
-    .teacher { width: min(340px, 78vw); height: auto; overflow: visible; }
-    .ln {
-      fill: none; stroke: var(--ink); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round;
-      stroke-dasharray: 1 1; stroke-dashoffset: 1;
-    }
-    .c { fill-opacity: 0; }
-    .halo { fill-opacity: 0; }
-    .glow { transform-box: fill-box; transform-origin: center; transform: scale(0); }
-    .armR { transform-box: view-box; transform-origin: 262px 216px; }
-    .page {
-      position: relative; z-index: 9;
-      min-height: 100vh; width: 100%;
-      display: flex; align-items: center; justify-content: center;
-      padding: 32px 20px;
-      background: var(--bg);
-      clip-path: circle(0px at var(--fx, 50%) var(--fy, 50%));
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      .intro2 { animation: introIn .5s ease .0s both, hideIntro .01s linear 12s forwards; }
-      .halo { animation: haloIn .9s ease 5.6s forwards; }
-      .ln { animation: draw .8s ease var(--d) forwards; }
-      .c { animation: fillIn .6s ease var(--d) forwards; }
-      .armR { animation: flourish 1.1s ease-in-out 8.6s both; }
-      .glow { animation: glowPop .6s cubic-bezier(.2, 1.6, .4, 1) 9.6s forwards; }
-      .page { animation: reveal 1.6s cubic-bezier(.7, 0, .2, 1) 10.4s both; }
-      .skip-btn { animation: rise .6s var(--ease) .2s both, hideBtn .1s linear 12s forwards; }
-    }
-    @keyframes haloIn { to { fill-opacity: 0.28; } }
-    @keyframes fillIn { to { fill-opacity: 1; } }
-    @keyframes hideIntro { to { opacity: 0; visibility: hidden; } }
-    @keyframes flourish {
-      0% { transform: rotate(0deg); }
-      25% { transform: rotate(-14deg); }
-      50% { transform: rotate(10deg); }
-      75% { transform: rotate(-6deg); }
-      100% { transform: rotate(0deg); }
-    }
-    @keyframes glowPop {
-      0% { transform: scale(0); }
-      70% { transform: scale(1.35); }
-      100% { transform: scale(1); }
-    }
-    @keyframes reveal {
-      from { clip-path: circle(0px at var(--fx, 50%) var(--fy, 50%)); }
-      to { clip-path: circle(150vmax at var(--fx, 50%) var(--fy, 50%)); }
-    }
   </style>
 </head>
 <body>
   <div class="intro" id="intro" aria-hidden="true">
-    <div class="stage">
+    <div class="stage1">
       <span class="ring"></span><span class="ring"></span><span class="ring"></span>
       <svg class="intro-bell" viewBox="0 0 64 64" aria-hidden="true">
         <path pathLength="1" d="M32 6v4"/>
@@ -336,73 +308,66 @@
     <div class="intro-sub">자리에 앉아 주세요</div>
     <div class="flash"></div>
   </div>
+
+  <div class="intro2" id="intro2" aria-hidden="true"></div>
+
+  <svg class="teacher" id="teacher" viewBox="0 0 400 500" aria-hidden="true">
+    <circle class="halo" cx="200" cy="280" r="175" fill="#f2b33d"/>
+
+    <path class="ln" style="--d:6.1s" d="M136 212 Q200 188 264 212 L282 330 Q200 345 118 330 Z"/>
+    <path class="c" fill="#e07a5f" d="M136 212 Q200 188 264 212 L282 330 Q200 345 118 330 Z"/>
+    <path class="ln" style="--d:6.3s" d="M130 326 L270 326 L268 470 L222 470 L200 380 L178 470 L132 470 Z"/>
+    <path class="c" fill="#4a5a78" d="M130 326 L270 326 L268 470 L222 470 L200 380 L178 470 L132 470 Z"/>
+    <path class="ln" style="--d:6.5s" d="M122 468 L178 468 L180 486 L116 486 Z M222 468 L278 468 L284 486 L220 486 Z"/>
+    <path class="c" fill="#3d3126" d="M122 468 L178 468 L180 486 L116 486 Z M222 468 L278 468 L284 486 L220 486 Z"/>
+
+    <path class="c" fill="#f6d0b1" d="M186 170 L186 198 L214 198 L214 170 Z"/>
+
+    <circle class="ln" style="--d:5.5s" cx="200" cy="125" r="52"/>
+    <circle class="c" cx="200" cy="125" r="52" fill="#f6d0b1"/>
+
+    <path class="ln" style="--d:5.8s" d="M146 122 C140 66 176 52 202 54 C232 56 262 74 254 122 C246 100 232 88 200 88 C172 88 154 100 146 122 Z"/>
+    <path class="c" fill="#3d3126" d="M146 122 C140 66 176 52 202 54 C232 56 262 74 254 122 C246 100 232 88 200 88 C172 88 154 100 146 122 Z"/>
+
+    <path class="ln" style="--d:6.0s" d="M170 126 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 M204 126 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 M196 126 L204 126"/>
+    <circle class="c" cx="183" cy="126" r="3.5" fill="#3d3126"/>
+    <circle class="c" cx="217" cy="126" r="3.5" fill="#3d3126"/>
+    <path class="ln" style="--d:7.2s" d="M188 152 Q200 163 212 152"/>
+
+    <path class="ln" style="--d:6.5s" d="M136 214 Q104 250 112 296 L140 300 Q136 262 162 240 Z"/>
+    <path class="c" fill="#e07a5f" d="M136 214 Q104 250 112 296 L140 300 Q136 262 162 240 Z"/>
+    <path class="ln" style="--d:7.0s" d="M118 296 L206 276 L214 334 L126 354 Z"/>
+    <path class="c" fill="#6fb7d9" d="M118 296 L206 276 L214 334 L126 354 Z"/>
+    <path class="ln" style="--d:7.2s" d="M124 320 L212 300"/>
+    <circle class="ln" style="--d:7.1s" cx="124" cy="332" r="12"/>
+    <circle class="c" cx="124" cy="332" r="12" fill="#f6d0b1"/>
+
+    <g class="armR" id="armR">
+      <path class="ln" style="--d:6.6s" d="M262 216 L306 152 L328 168 L282 236 Z"/>
+      <path class="c" fill="#e07a5f" d="M262 216 L306 152 L328 168 L282 236 Z"/>
+      <path class="ln" style="--d:6.8s" d="M302 150 L326 110 L344 120 L320 164 Z"/>
+      <path class="c" fill="#e07a5f" d="M302 150 L326 110 L344 120 L320 164 Z"/>
+      <path class="ln" style="--d:7.0s" d="M322 112 L334 88 L338 64 C339 58 348 57 349 63 L352 84 L358 70 C360 64 368 65 368 72 L362 98 L354 118 Z"/>
+      <path class="c" fill="#f6d0b1" d="M322 112 L334 88 L338 64 C339 58 348 57 349 63 L352 84 L358 70 C360 64 368 65 368 72 L362 98 L354 118 Z"/>
+    </g>
+
+    <g class="orbit">
+      <circle cx="369" cy="56" r="3.5" fill="#f2b33d"/>
+      <circle cx="317" cy="56" r="3" fill="#7fd3ff"/>
+      <circle cx="343" cy="6" r="2.8" fill="#ff7a6b"/>
+      <circle cx="343" cy="106" r="2.8" fill="#f2b33d"/>
+    </g>
+    <circle class="glow" cx="343" cy="56" r="12" fill="#ffd23f"/>
+
+    <g class="pen" id="pen">
+      <rect x="-8" y="-58" width="16" height="10" rx="2" fill="#e07a5f" stroke="#3d3126" stroke-width="2"/>
+      <rect x="-8" y="-48" width="16" height="36" fill="#f2b33d" stroke="#3d3126" stroke-width="2"/>
+      <path d="M-8 -12 L8 -12 L0 0 Z" fill="#f6d0b1" stroke="#3d3126" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M-2.5 -4 L2.5 -4 L0 0 Z" fill="#3d3126"/>
+    </g>
+  </svg>
+
   <button class="skip-btn" id="skipBtn" type="button">건너뛰기</button>
-
-  <div class="intro2" id="intro2" aria-hidden="true">
-    <svg class="teacher" viewBox="0 0 400 500" aria-hidden="true">
-      <!-- 배경 햇살 -->
-      <circle class="halo" cx="200" cy="280" r="175" fill="#f2b33d"/>
-
-      <!-- 몸통과 바지 (선 → 색) -->
-      <path class="ln" style="--d:6.1s" d="M136 212 Q200 188 264 212 L282 330 Q200 345 118 330 Z"/>
-      <path class="c" style="--d:8.0s" fill="#e07a5f" d="M136 212 Q200 188 264 212 L282 330 Q200 345 118 330 Z"/>
-      <path class="ln" style="--d:6.3s" d="M130 326 L270 326 L268 470 L222 470 L200 380 L178 470 L132 470 Z"/>
-      <path class="c" style="--d:8.2s" fill="#4a5a78" d="M130 326 L270 326 L268 470 L222 470 L200 380 L178 470 L132 470 Z"/>
-      <path class="ln" style="--d:6.5s" d="M122 468 L178 468 L180 486 L116 486 Z M222 468 L278 468 L284 486 L220 486 Z"/>
-      <path class="c" style="--d:8.5s" fill="#3d3126" d="M122 468 L178 468 L180 486 L116 486 Z M222 468 L278 468 L284 486 L220 486 Z"/>
-
-      <!-- 목 -->
-      <path class="c" style="--d:7.7s" fill="#f6d0b1" d="M186 170 L186 198 L214 198 L214 170 Z"/>
-
-      <!-- 얼굴 -->
-      <circle class="ln" style="--d:5.5s" cx="200" cy="125" r="52" pathLength="1"/>
-      <circle class="c" style="--d:7.8s" cx="200" cy="125" r="52" fill="#f6d0b1"/>
-
-      <!-- 머리카락 -->
-      <path class="ln" style="--d:5.8s" d="M146 122 C140 66 176 52 202 54 C232 56 262 74 254 122 C246 100 232 88 200 88 C172 88 154 100 146 122 Z"/>
-      <path class="c" style="--d:7.9s" fill="#3d3126" d="M146 122 C140 66 176 52 202 54 C232 56 262 74 254 122 C246 100 232 88 200 88 C172 88 154 100 146 122 Z"/>
-
-      <!-- 안경과 얼굴 -->
-      <path class="ln" style="--d:6.0s" d="M170 126 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 M204 126 a13 13 0 1 0 26 0 a13 13 0 1 0 -26 0 M196 126 L204 126"/>
-      <circle class="c" style="--d:8.6s" cx="183" cy="126" r="3.5" fill="#3d3126"/>
-      <circle class="c" style="--d:8.6s" cx="217" cy="126" r="3.5" fill="#3d3126"/>
-      <path class="ln" style="--d:7.2s" d="M188 152 Q200 163 212 152"/>
-
-      <!-- 왼팔과 책 -->
-      <path class="ln" style="--d:6.5s" d="M136 214 Q104 250 112 296 L140 300 Q136 262 162 240 Z"/>
-      <path class="c" style="--d:8.0s" fill="#e07a5f" d="M136 214 Q104 250 112 296 L140 300 Q136 262 162 240 Z"/>
-      <path class="ln" style="--d:7.0s" d="M118 296 L206 276 L214 334 L126 354 Z"/>
-      <path class="c" style="--d:8.4s" fill="#6fb7d9" d="M118 296 L206 276 L214 334 L126 354 Z"/>
-      <path class="ln" style="--d:7.2s" d="M124 320 L212 300"/>
-      <circle class="ln" style="--d:7.1s" cx="124" cy="332" r="12" pathLength="1"/>
-      <circle class="c" style="--d:8.6s" cx="124" cy="332" r="12" fill="#f6d0b1"/>
-
-      <!-- 오른팔 (마법을 부리는 팔) -->
-      <g class="armR">
-        <path class="ln" style="--d:6.6s" d="M262 216 L306 152 L328 168 L282 236 Z"/>
-        <path class="c" style="--d:8.0s" fill="#e07a5f" d="M262 216 L306 152 L328 168 L282 236 Z"/>
-        <path class="ln" style="--d:6.8s" d="M302 150 L326 110 L344 120 L320 164 Z"/>
-        <path class="c" style="--d:8.0s" fill="#e07a5f" d="M302 150 L326 110 L344 120 L320 164 Z"/>
-        <path class="ln" style="--d:7.0s" d="M322 112 L334 88 L338 64 C339 58 348 57 349 63 L352 84 L358 70 C360 64 368 65 368 72 L362 98 L354 118 Z"/>
-        <path class="c" style="--d:8.3s" fill="#f6d0b1" d="M322 112 L334 88 L338 64 C339 58 348 57 349 63 L352 84 L358 70 C360 64 368 65 368 72 L362 98 L354 118 Z"/>
-      </g>
-
-      <!-- 마법: 손끝 빛과 반짝이 -->
-      <circle class="glow" id="tip" cx="343" cy="56" r="12" fill="#ffd23f"/>
-      <circle r="3.5" fill="#f2b33d" opacity="0">
-        <animateMotion dur="1.2s" begin="9.7s" repeatCount="2" path="M355 56 A12 12 0 1 0 331 56 A12 12 0 1 0 355 56"/>
-        <animate attributeName="opacity" values="0;1;1;0" dur="1.2s" begin="9.7s" repeatCount="2"/>
-      </circle>
-      <circle r="3" fill="#7fd3ff" opacity="0">
-        <animateMotion dur="1.5s" begin="9.8s" repeatCount="2" path="M373 56 A30 30 0 1 0 313 56 A30 30 0 1 0 373 56"/>
-        <animate attributeName="opacity" values="0;1;1;0" dur="1.5s" begin="9.8s" repeatCount="2"/>
-      </circle>
-      <circle r="2.8" fill="#ff7a6b" opacity="0">
-        <animateMotion dur="1.8s" begin="9.9s" repeatCount="2" path="M395 56 A52 52 0 1 0 291 56 A52 52 0 1 0 395 56"/>
-        <animate attributeName="opacity" values="0;1;1;0" dur="1.8s" begin="9.9s" repeatCount="2"/>
-      </circle>
-    </svg>
-  </div>
 
   <div class="page" id="page">
   <main class="board">
@@ -441,7 +406,7 @@
   </div>
 
   <script>
-    // 인트로 글자 하나씩 쓰기
+    // 인트로 1: 글자 쪼개기
     const introTitle = document.getElementById("introTitle");
     const introText = introTitle.textContent;
     introTitle.textContent = "";
@@ -453,7 +418,7 @@
       introTitle.appendChild(s);
     });
 
-    // 먼지 입자
+    // 인트로 1: 먼지
     const intro = document.getElementById("intro");
     for (let i = 0; i < 26; i++) {
       const d = document.createElement("span");
@@ -465,21 +430,99 @@
       intro.prepend(d);
     }
 
-    // 건너뛰기
     document.getElementById("skipBtn").addEventListener("click", () => {
       document.body.classList.add("skip");
     });
 
-    // 손끝 위치를 재서 페이지가 그 지점에서 펼쳐지게 함
-    const tipEl = document.getElementById("tip");
-    function placeTip() {
-      const r = tipEl.getBoundingClientRect();
-      const st = document.documentElement.style;
-      st.setProperty("--fx", (r.left + r.width / 2) + "px");
-      st.setProperty("--fy", (r.top + r.height / 2) + "px");
+    // 인트로 2: 펜으로 선 그리기
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const teacher = document.getElementById("teacher");
+    const pen = document.getElementById("pen");
+    const armR = document.getElementById("armR");
+    const pageEl = document.getElementById("page");
+    const intro2El = document.getElementById("intro2");
+    const root = document.documentElement;
+
+    const lines = [...teacher.querySelectorAll(".ln")].map(el => {
+      el.removeAttribute("pathLength");
+      const L = el.getTotalLength();
+      const order = parseFloat(el.style.getPropertyValue("--d")) || 0;
+      el.style.strokeDasharray = L + " " + L;
+      el.style.strokeDashoffset = L;
+      return { el, L, order };
+    }).sort((a, b) => a.order - b.order);
+
+    const SPEED = 560; // 펜 이동 속도 (단위/초)
+    let cursor = 0;
+    const segs = lines.map(o => {
+      const dur = Math.max(200, (o.L / SPEED) * 1000);
+      const seg = { ...o, s: cursor, e: cursor + dur };
+      cursor += dur + 50;
+      return seg;
+    });
+    const drawTotal = cursor;
+
+    function drawStep(t0) {
+      return function step(now) {
+        const t = now - t0;
+        let active = null;
+        for (const s of segs) {
+          if (t < s.s) { s.el.style.strokeDashoffset = s.L; continue; }
+          if (t >= s.e) { s.el.style.strokeDashoffset = 0; continue; }
+          const p = (t - s.s) / (s.e - s.s);
+          s.el.style.strokeDashoffset = s.L * (1 - p);
+          active = { s, p };
+        }
+        if (active) {
+          const { s, p } = active;
+          const len = s.L * p;
+          const a = s.el.getPointAtLength(len);
+          const b = s.el.getPointAtLength(Math.min(s.L, len + 2));
+          const ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI - 90;
+          pen.setAttribute("transform", "translate(" + a.x + " " + a.y + ") rotate(" + ang + ")");
+          pen.style.opacity = 1;
+        } else {
+          pen.style.opacity = 0;
+        }
+        if (t < drawTotal) requestAnimationFrame(step);
+        else onDrawDone();
+      };
     }
-    placeTip();
-    window.addEventListener("resize", placeTip);
+
+    function colorize() {
+      [...teacher.querySelectorAll(".c")].forEach((el, i) => {
+        el.style.animation = "fillIn .6s ease " + (0.1 + i * 0.05).toFixed(2) + "s forwards";
+      });
+    }
+
+    function computeMove() {
+      const r = teacher.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const wide = window.innerWidth >= 1000;
+      const tx = wide ? Math.max(120, (window.innerWidth - 720) / 4) : 70;
+      const ty = wide ? cy : 70;
+      const tw = wide ? 170 : 90;
+      root.style.setProperty("--dx", (tx - cx) + "px");
+      root.style.setProperty("--dy", (ty - cy) + "px");
+      root.style.setProperty("--ds", (tw / r.width).toFixed(3));
+    }
+
+    function onDrawDone() {
+      pen.style.opacity = 0;
+      colorize();                                   // 색칠
+      setTimeout(() => { armR.style.animation = "flourish 1.1s ease-in-out both"; }, 200); // 팔 흔들기
+      setTimeout(() => teacher.classList.add("magic"), 1400);   // 손끝에서 마법 빛
+      setTimeout(() => { computeMove(); teacher.classList.add("move"); }, 2800); // 왼쪽으로 작아지며 이동
+      setTimeout(() => pageEl.classList.add("open"), 3500);     // 페이지가 열림
+      setTimeout(() => { intro2El.style.display = "none"; }, 4800);
+    }
+
+    if (!reduceMotion) {
+      setTimeout(() => {
+        requestAnimationFrame(drawStep(performance.now()));
+      }, 5500);
+    }
 
     document.getElementById("year").textContent = new Date().getFullYear();
     const d = new Date();
