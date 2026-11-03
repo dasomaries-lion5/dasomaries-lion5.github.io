@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>강사 프로필 편집 | 교실</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #f4ead7; --paper: #fbf5e8; --ink: #3d3126; --ink-dim: #7a6a57; --accent: #f2b33d; --accent-dark: #c98a12; --coral: #e07a5f; --coral-dark: #b85a40; --sky: #6fb7d9; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 32px 20px; font-family: "Gaegu", "Malgun Gothic", sans-serif; color: var(--ink); background: var(--bg); }
+    .wrap { max-width: 960px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 34px; }
+    h2 { margin: 0 0 10px; font-size: 22px; }
+    .hint { margin: 0 0 24px; color: var(--ink-dim); font-size: 18px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
+    .card { background: var(--paper); border-radius: 16px; padding: 22px; box-shadow: 0 16px 36px -24px rgb(61 49 38 / 0.5); }
+    label { display: block; margin-bottom: 14px; font-size: 16px; color: var(--ink-dim); }
+    input, textarea {
+      display: block; width: 100%; margin-top: 6px; padding: 10px 12px;
+      font: inherit; font-size: 17px; color: var(--ink);
+      background: #fffdf7; border: 2px solid rgb(61 49 38 / 0.15); border-radius: 10px;
+    }
+    input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    textarea { resize: vertical; }
+    .row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; margin-bottom: 8px; }
+    .row input { margin-top: 0; font-size: 15px; }
+    button {
+      font: inherit; font-size: 16px; color: var(--ink); cursor: pointer;
+      padding: 9px 16px; border-radius: 999px; border: 2px solid var(--accent); background: #fffdf7;
+    }
+    button:hover { background: var(--accent); }
+    button.danger { border-color: var(--coral); }
+    button.danger:hover { background: var(--coral); color: #fff; }
+    .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+    .preview .label { margin: 0 0 12px; color: var(--ink-dim); font-size: 16px; }
+    .profile-card { display: flex; align-items: center; gap: 18px; padding: 18px 22px; background: #fffdf7; border: 2px solid rgb(61 49 38 / 0.12); border-radius: 14px; }
+    .avatar { flex: 0 0 72px; height: 72px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--sky); font-size: 32px; font-weight: 700; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .pname { margin: 0; font-size: 22px; font-weight: 700; }
+    .pbadge { display: inline-block; margin-left: 6px; padding: 2px 10px; border-radius: 999px; font-size: 14px; background: var(--accent); }
+    .pbio { margin: 4px 0 8px; font-size: 17px; color: var(--ink-dim); }
+    .ptags span { display: inline-block; margin: 0 6px 6px 0; padding: 2px 10px; border-radius: 999px; font-size: 14px; border: 1px solid rgb(61 49 38 / 0.15); background: var(--paper); }
+    .plink { display: block; font-size: 16px; color: var(--coral-dark); }
+    .save { margin-top: 24px; }
+    details { margin-top: 14px; }
+    summary { cursor: pointer; font-size: 17px; color: var(--ink-dim); margin-bottom: 10px; }
+    .warn { font-size: 14px; color: var(--ink-dim); margin: 8px 0 0; }
+    #status { margin-top: 12px; font-size: 17px; min-height: 22px; }
+    .ok { color: #3b7a3b; } .err { color: #b03a2e; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <h1>강사 프로필 편집</h1>
+    <p class="hint">여기서 고치면 홈페이지의 1교시 강사 프로필에 반영됩니다. 오른쪽에서 미리 볼 수 있어요.</p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>내용</h2>
+        <label>이름<input id="f-name" maxlength="40"></label>
+        <label>직함<input id="f-role" maxlength="20"></label>
+        <label>소개<textarea id="f-bio" rows="4" maxlength="200"></textarea></label>
+        <label>태그 (쉼표로 구분)<input id="f-tags" placeholder="예: GitHub, 프로젝트"></label>
+        <label>사진 (정사각형으로 자동 줄여요)<input id="f-photo" type="file" accept="image/*"></label>
+        <div class="btns"><button type="button" id="clearPhoto" class="danger">사진 지우기</button></div>
+
+        <h2 style="margin-top:18px">링크</h2>
+        <div id="links"></div>
+        <div class="btns"><button type="button" id="addLink">링크 추가</button></div>
+      </section>
+
+      <section class="card preview">
+        <p class="label">미리보기</p>
+        <div class="profile-card">
+          <div class="avatar" id="p-avatar">D</div>
+          <div>
+            <p class="pname"><span id="p-name"></span><span class="pbadge" id="p-role"></span></p>
+            <p class="pbio" id="p-bio"></p>
+            <div class="ptags" id="p-tags"></div>
+            <div id="p-links"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <section class="card save">
+      <h2>저장</h2>
+      <div class="btns">
+        <button type="button" id="dl">profile.json 파일 받기</button>
+      </div>
+      <p class="warn">받은 파일을 저장소 맨 위에 profile.json 이름으로 올리면 반영됩니다.</p>
+
+      <details>
+        <summary>GitHub에 바로 저장하기 (토큰 필요)</summary>
+        <label>저장소 주인<input id="g-owner"></label>
+        <label>저장소 이름<input id="g-repo"></label>
+        <label>GitHub 토큰 (이 저장소의 Contents 쓰기 권한)<input id="g-token" type="password" autocomplete="off"></label>
+        <label><input type="checkbox" id="g-remember" style="display:inline;width:auto;margin:0 6px 0 0"> 이 브라우저에 토큰 기억하기</label>
+        <div class="btns"><button type="button" id="gh">GitHub에 저장</button></div>
+        <p class="warn">토큰은 이 브라우저에서만 쓰이고, profile.json 파일을 바꾸는 데만 사용됩니다. 공용 컴퓨터에서는 기억하기를 끄세요.</p>
+      </details>
+      <p id="status"></p>
+    </section>
+  </main>
+
+  <script>
+    var DEFAULT = {
+      name: "dasomaries-lion5", role: "강사", bio: "", photo: "", tags: [],
+      links: [{ label: "GitHub 프로필 보러 가기", url: "https://github.com/dasomaries-lion5" }]
+    };
+    var state = JSON.parse(JSON.stringify(DEFAULT));
+    var $ = function (id) { return document.getElementById(id); };
+
+    function safeUrl(u) { return /^https?:\/\//.test(u || "") ? u : ""; }
+
+    function renderPreview() {
+      $("p-name").textContent = state.name || "";
+      $("p-role").textContent = state.role || "";
+      $("p-bio").textContent = state.bio || "";
+      var av = $("p-avatar");
+      av.innerHTML = "";
+      if (state.photo) {
+        var img = document.createElement("img");
+        img.src = state.photo; img.alt = "";
+        av.appendChild(img);
+      } else {
+        av.textContent = (state.name || "?").charAt(0).toUpperCase();
+      }
+      var tg = $("p-tags"); tg.innerHTML = "";
+      (state.tags || []).forEach(function (t) {
+        var s = document.createElement("span"); s.textContent = t; tg.appendChild(s);
+      });
+      var pl = $("p-links"); pl.innerHTML = "";
+      (state.links || []).forEach(function (l) {
+        var u = safeUrl(l.url); if (!u) return;
+        var a = document.createElement("a");
+        a.className = "plink"; a.href = u; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = l.label || u;
+        pl.appendChild(a);
+      });
+    }
+
+    function renderLinks() {
+      var box = $("links"); box.innerHTML = "";
+      state.links.forEach(function (l, i) {
+        var row = document.createElement("div"); row.className = "row";
+        var lab = document.createElement("input"); lab.placeholder = "이름"; lab.value = l.label || "";
+        var url = document.createElement("input"); url.placeholder = "https://..."; url.value = l.url || "";
+        var del = document.createElement("button"); del.type = "button"; del.className = "danger"; del.textContent = "삭제";
+        lab.addEventListener("input", function () { state.links[i].label = lab.value; renderPreview(); });
+        url.addEventListener("input", function () { state.links[i].url = url.value; renderPreview(); });
+        del.addEventListener("click", function () { state.links.splice(i, 1); renderLinks(); renderPreview(); });
+        row.appendChild(lab); row.appendChild(url); row.appendChild(del);
+        box.appendChild(row);
+      });
+    }
+
+    function fillForm() {
+      $("f-name").value = state.name || "";
+      $("f-role").value = state.role || "";
+      $("f-bio").value = state.bio || "";
+      $("f-tags").value = (state.tags || []).join(", ");
+      renderLinks();
+      renderPreview();
+    }
+
+    function normalize(j) {
+      var out = JSON.parse(JSON.stringify(DEFAULT));
+      if (j && typeof j === "object") {
+        if (typeof j.name === "string") out.name = j.name;
+        if (typeof j.role === "string") out.role = j.role;
+        if (typeof j.bio === "string") out.bio = j.bio;
+        if (typeof j.photo === "string") out.photo = j.photo;
+        if (Array.isArray(j.tags)) out.tags = j.tags.filter(function (t) { return typeof t === "string"; });
+        if (Array.isArray(j.links)) out.links = j.links.filter(function (l) { return l && typeof l.url === "string"; });
+      }
+      return out;
+    }
+
+    function setStatus(msg, cls) {
+      var s = $("status"); s.textContent = msg; s.className = cls || "";
+    }
+
+    // 입력 연결
+    $("f-name").addEventListener("input", function () { state.name = $("f-name").value; renderPreview(); });
+    $("f-role").addEventListener("input", function () { state.role = $("f-role").value; renderPreview(); });
+    $("f-bio").addEventListener("input", function () { state.bio = $("f-bio").value; renderPreview(); });
+    $("f-tags").addEventListener("input", function () {
+      state.tags = $("f-tags").value.split(",").map(function (t) { return t.trim(); }).filter(Boolean);
+      renderPreview();
+    });
+    $("addLink").addEventListener("click", function () {
+      state.links.push({ label: "", url: "https://" }); renderLinks(); renderPreview();
+    });
+
+    // 사진: 정사각형으로 잘라 256px로 줄이기
+    $("f-photo").addEventListener("change", function () {
+      var file = $("f-photo").files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        var img = new Image();
+        img.onload = function () {
+          var size = 256, canvas = document.createElement("canvas");
+          canvas.width = size; canvas.height = size;
+          var ctx = canvas.getContext("2d");
+          var side = Math.min(img.width, img.height);
+          var sx = (img.width - side) / 2, sy = (img.height - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          state.photo = canvas.toDataURL("image/jpeg", 0.85);
+          renderPreview();
+          setStatus("사진을 넣었어요. 저장하는 것을 잊지 마세요.", "ok");
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+    $("clearPhoto").addEventListener("click", function () {
+      state.photo = ""; $("f-photo").value = ""; renderPreview();
+    });
+
+    // 파일로 받기
+    function currentJson() {
+      var clean = normalize(state);
+      clean.links = clean.links.filter(function (l) { return safeUrl(l.url); });
+      return JSON.stringify(clean, null, 2) + "\n";
+    }
+    $("dl").addEventListener("click", function () {
+      var blob = new Blob([currentJson()], { type: "application/json" });
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "profile.json";
+      a.click();
+      setStatus("profile.json을 받았어요. 저장소에 올려 주세요.", "ok");
+    });
+
+    // GitHub 바로 저장
+    function utf8ToBase64(str) {
+      var bytes = new TextEncoder().encode(str);
+      var bin = "";
+      for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+    var KEY = "classroomProfileRepo";
+    function loadRepoPrefs() {
+      var host = location.hostname.split(".");
+      var saved = {};
+      try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) {}
+      $("g-owner").value = saved.owner || (location.hostname.endsWith(".github.io") ? host[0] : "");
+      $("g-repo").value = saved.repo || (location.hostname.endsWith(".github.io") ? location.hostname : "");
+      if (saved.token) { $("g-token").value = saved.token; $("g-remember").checked = true; }
+    }
+    $("gh").addEventListener("click", async function () {
+      var owner = $("g-owner").value.trim(), repo = $("g-repo").value.trim(), token = $("g-token").value.trim();
+      if (!owner || !repo || !token) { setStatus("저장소 주인, 저장소 이름, 토큰을 모두 넣어 주세요.", "err"); return; }
+      setStatus("저장하는 중이에요...", "");
+      var url = "https://api.github.com/repos/" + owner + "/" + repo + "/contents/profile.json";
+      var headers = { Authorization: "Bearer " + token, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" };
+      try {
+        var sha = null;
+        var g = await fetch(url + "?ref=main", { headers: headers });
+        if (g.ok) sha = (await g.json()).sha;
+        else if (g.status !== 404) throw new Error("읽기 실패 (" + g.status + ")");
+        var body = { message: "강사 프로필 수정", content: utf8ToBase64(currentJson()), branch: "main" };
+        if (sha) body.sha = sha;
+        var p = await fetch(url, { method: "PUT", headers: Object.assign({ "Content-Type": "application/json" }, headers), body: JSON.stringify(body) });
+        if (!p.ok) throw new Error("저장 실패 (" + p.status + ")");
+        if ($("g-remember").checked) localStorage.setItem(KEY, JSON.stringify({ owner: owner, repo: repo, token: token }));
+        else localStorage.setItem(KEY, JSON.stringify({ owner: owner, repo: repo }));
+        setStatus("저장했어요. 1~2분 뒤 홈페이지에서 확인할 수 있어요.", "ok");
+      } catch (e) {
+        setStatus(e.message + " 토큰 권한이나 저장소 이름을 확인해 주세요.", "err");
+      }
+    });
+
+    // 처음 불러오기
+    loadRepoPrefs();
+    fetch("profile.json?v=" + Date.now()).then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function (j) { state = normalize(j); })
+      .catch(function () { state = normalize(DEFAULT); })
+      .then(fillForm);
+  </script>
+</body>
+</html>
