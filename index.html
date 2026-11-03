@@ -278,6 +278,12 @@
       display: grid; place-items: center;
       background: var(--sky); color: var(--ink); font-size: 32px; font-weight: 700;
     }
+    .profile .avatar { overflow: hidden; }
+    .profile .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .ptags span {
+      display: inline-block; margin: 0 6px 6px 0; padding: 2px 10px; border-radius: 999px;
+      font-size: 14px; background: var(--paper); border: 1px solid rgb(61 49 38 / 0.15);
+    }
     .pname { font-size: 22px; font-weight: 700; }
     .pname span {
       display: inline-block; margin-left: 6px; padding: 2px 10px; border-radius: 999px;
@@ -401,11 +407,12 @@
       </a>
     </nav>
     <section class="profile" id="profile" hidden>
-      <div class="avatar" aria-hidden="true">D</div>
+      <div class="avatar" id="pAvatar" aria-hidden="true">D</div>
       <div class="pbody">
-        <p class="pname">dasomaries-lion5 <span>강사</span></p>
-        <p class="pbio">교실에서 이것저것 만들고 나누는 강사예요. 프로젝트와 코드 이야기를 좋아해요.</p>
-        <a class="plink" href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">GitHub 프로필 보러 가기</a>
+        <p class="pname"><span id="pName">dasomaries-lion5</span><span class="pbadge" id="pRole">강사</span></p>
+        <p class="pbio" id="pBio">교실에서 이것저것 만들고 나누는 강사예요.</p>
+        <div class="ptags" id="pTags"></div>
+        <div id="pLinks"><a class="plink" href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">GitHub 프로필 보러 가기</a></div>
       </div>
     </section>
     <div class="notice"><b>알림장</b> 홈페이지는 GitHub Pages로 운영 중이에요. 궁금한 점은 GitHub에서 찾아 주세요.</div>
@@ -567,6 +574,24 @@
       setTimeout(function () { requestAnimationFrame(drawStep(performance.now())); }, 5500);
     }
 
+    // 강사 프로필: profile.json 에서 내용을 읽어 표시 (편집: edit.html)
+    function safeLink(u) { return /^https?:\/\//.test(u || "") ? u : ""; }
+    fetch("profile.json?v=" + Date.now()).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (j) {
+      if (j.name) document.getElementById("pName").textContent = j.name;
+      if (j.role) document.getElementById("pRole").textContent = j.role;
+      if (j.bio) document.getElementById("pBio").textContent = j.bio;
+      var av = document.getElementById("pAvatar");
+      if (j.photo && /^data:image\//.test(j.photo)) { av.innerHTML = ""; var im = document.createElement("img"); im.src = j.photo; im.alt = ""; av.appendChild(im); }
+      else if (j.name) { av.textContent = j.name.charAt(0).toUpperCase(); }
+      var tg = document.getElementById("pTags"); tg.innerHTML = "";
+      (j.tags || []).forEach(function (t) { var s = document.createElement("span"); s.textContent = t; tg.appendChild(s); });
+      var pl = document.getElementById("pLinks"); pl.innerHTML = "";
+      (j.links || []).forEach(function (l) {
+        var u = safeLink(l.url); if (!u) return;
+        var a = document.createElement("a"); a.className = "plink"; a.href = u; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = l.label || u; pl.appendChild(a);
+      });
+    }).catch(function () { /* 파일이 없으면 기본 내용 유지 */ });
     var profToggle = document.querySelector(".profile-toggle");
     var profPanel = document.getElementById("profile");
     profToggle.addEventListener("click", function () {
