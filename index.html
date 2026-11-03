@@ -3,100 +3,269 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>dasomaries-lion5 | Home</title>
-  <meta name="description" content="dasomaries-lion5의 홈페이지">
+  <title>dasomaries-lion5 | 교실</title>
+  <meta name="description" content="dasomaries-lion5의 교실, 홈페이지">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #1e293b;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
+      --board: #2f4a3c;
+      --board-dark: #243a2f;
+      --chalk: #f4f1e8;
+      --chalk-dim: #c9d3c8;
+      --wood: #8b5e34;
+      --wood-light: #b0834f;
+      --yellow: #f7d154;
+      --red: #e8806b;
+      --blue: #8cc7e8;
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Roboto, sans-serif;
-      background: radial-gradient(circle at top, #1e3a5f 0%, var(--bg) 60%);
-      color: var(--text);
+      font-family: "Gaegu", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      color: var(--chalk);
+      background:
+        radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / 0.08), transparent 60%),
+        linear-gradient(180deg, var(--board) 0%, var(--board-dark) 100%);
       min-height: 100vh;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      line-height: 1.6;
+      padding: 32px 20px;
       overflow-x: hidden;
     }
-    main { width: 100%; max-width: 640px; text-align: center; }
-    .avatar {
-      width: 96px; height: 96px; border-radius: 50%;
-      border: 3px solid var(--accent);
-      margin: 0 auto 20px;
-      display: grid; place-items: center;
-      font-size: 36px; font-weight: 700; color: var(--accent);
-      background: var(--card);
+    /* 칠판 틀 */
+    .board {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      padding: 44px 40px 36px;
+      border-radius: 14px;
+      background: var(--board);
+      box-shadow:
+        inset 0 0 60px rgb(0 0 0 / 0.35),
+        0 0 0 12px var(--wood),
+        0 0 0 14px var(--wood-light),
+        0 30px 60px -20px rgb(0 0 0 / 0.6);
+      text-align: center;
     }
-    h1 { font-size: 2rem; margin-bottom: 8px; }
-    .tagline { color: var(--muted); margin-bottom: 32px; }
-    .links {
-      display: grid;
-      gap: 12px;
-      grid-template-columns: 1fr;
-      margin-bottom: 40px;
+    .board::after {
+      /* 분필 자국 느낌의 얼룩 */
+      content: "";
+      position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background:
+        radial-gradient(circle at 15% 20%, rgb(255 255 255 / 0.05) 0 2px, transparent 3px),
+        radial-gradient(circle at 80% 70%, rgb(255 255 255 / 0.04) 0 2px, transparent 3px),
+        linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 0.04) 50%, transparent 60%);
     }
-    .links a {
-      display: block;
-      padding: 16px 20px;
-      background: var(--card);
-      border: 1px solid #334155;
-      border-radius: 12px;
-      color: var(--text);
-      text-decoration: none;
-      transition: transform .45s var(--ease), border-color .45s var(--ease), box-shadow .45s var(--ease);
-    }
-    .links a:hover, .links a:focus-visible { transform: translateY(-4px); border-color: var(--accent); box-shadow: 0 18px 36px -20px rgb(56 189 248 / 0.6); }
-    .links strong { display: block; font-size: 1.05rem; }
-    .links span { color: var(--muted); font-size: .9rem; }
-    footer { color: var(--muted); font-size: .85rem; }
 
-    /* 첫 진입 애니메이션: 요소가 아래에서 차례로 올라오며 나타남 */
+    .tray { /* 칠판 아래 분필 받침 */
+      position: absolute; left: 12%; right: 12%; bottom: -26px; height: 12px;
+      background: var(--wood); border-radius: 0 0 8px 8px;
+    }
+
+    .date {
+      font-size: 18px; color: var(--chalk-dim); letter-spacing: 0.02em;
+    }
+    .date b { color: var(--yellow); font-weight: 700; }
+
+    h1 {
+      position: relative;
+      margin: 14px 0 6px;
+      font-size: clamp(38px, 6vw, 58px);
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .underline {
+      display: block; width: 62%; height: 14px; margin: 0 auto 20px;
+    }
+    .underline path {
+      fill: none; stroke: var(--yellow); stroke-width: 4; stroke-linecap: round;
+      stroke-dasharray: 300; stroke-dashoffset: 300;
+    }
+    .tagline { font-size: 22px; color: var(--chalk-dim); }
+
+    /* 시간표 카드: 분필로 쓴 과목 */
+    .timetable {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin: 36px 0 30px;
+    }
+    .subject {
+      position: relative;
+      display: block;
+      padding: 22px 20px 18px;
+      border: 2px dashed rgb(244 241 232 / 0.55);
+      border-radius: 10px;
+      color: var(--chalk);
+      text-decoration: none;
+      transition: transform .45s var(--ease), border-color .45s var(--ease), background .45s var(--ease);
+    }
+    .subject:hover, .subject:focus-visible {
+      transform: translateY(-4px) rotate(-1deg);
+      border-color: var(--yellow);
+      background: rgb(255 255 255 / 0.04);
+    }
+    .period {
+      display: inline-block; padding: 2px 12px; border-radius: 999px;
+      font-size: 15px; font-weight: 700; color: var(--board-dark); background: var(--yellow);
+    }
+    .subject.second .period { background: var(--blue); }
+    .subject strong { display: block; margin-top: 12px; font-size: 24px; }
+    .subject span.desc { display: block; margin-top: 4px; font-size: 16px; color: var(--chalk-dim); }
+
+    /* 칠판 아래 알림장 */
+    .notice {
+      margin: 0 auto;
+      max-width: 460px;
+      padding: 14px 18px;
+      font-size: 17px;
+      color: var(--chalk);
+      background: rgb(0 0 0 / 0.14);
+      border-radius: 10px;
+      border-left: 5px solid var(--red);
+      text-align: left;
+    }
+    .notice b { color: var(--red); }
+
+    footer {
+      margin-top: 28px;
+      font-size: 15px;
+      color: var(--chalk-dim);
+    }
+
+    /* 종 */
+    .bell {
+      display: block;
+      width: 64px; height: 64px;
+      margin: 0 auto 6px;
+      transform-origin: 50% 8%;
+    }
+
+    /* 인트로: 종이 울리고 막이 위로 올라감 */
+    .intro {
+      position: fixed; inset: 0; z-index: 10;
+      display: grid; place-items: center; align-content: center; gap: 14px;
+      background: var(--board-dark);
+      color: var(--chalk);
+      font-size: 22px;
+      pointer-events: none;
+    }
+    .intro .bell-big { width: 84px; height: 84px; transform-origin: 50% 8%; }
+    .intro p { font-size: 22px; color: var(--chalk-dim); }
+
+    /* 칠판 등장 및 요소 */
     @media (prefers-reduced-motion: no-preference) {
-      .avatar, h1, .tagline, .links a, footer {
-        animation: rise .9s var(--ease) both;
+      .intro {
+        animation: curtain 2.1s var(--ease) both;
       }
-      h1 { animation-delay: .06s; }
-      .tagline { animation-delay: .12s; }
-      .links a:nth-child(1) { animation-delay: .2s; }
-      .links a:nth-child(2) { animation-delay: .28s; }
-      footer { animation-delay: .36s; }
-      .avatar { animation: drift 1.2s var(--ease) both; }
-      @keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
-      @keyframes drift { from { opacity: 0; transform: translateX(-40px) scale(0.92); } to { opacity: 1; transform: none; } }
+      .intro .bell-big { animation: ring .42s ease-in-out 0.25s 4 alternate both; }
+      .board { animation: boardIn .9s var(--ease) 1.1s both; }
+      .date { animation: rise .8s var(--ease) 1.35s both; }
+      h1 {
+        animation: write 1.1s steps(18, end) 1.5s both;
+      }
+      .underline path { animation: draw .9s var(--ease) 2.5s forwards; }
+      .tagline { animation: rise .8s var(--ease) 2.6s both; }
+      .subject:nth-child(1) { animation: pin .8s var(--ease) 2.8s both; }
+      .subject:nth-child(2) { animation: pin .8s var(--ease) 3s both; }
+      .notice { animation: rise .8s var(--ease) 3.2s both; }
+      footer { animation: rise .8s var(--ease) 3.4s both; }
+
+      @keyframes curtain {
+        0%, 70% { transform: none; visibility: visible; }
+        100% { transform: translateY(-100%); visibility: hidden; }
+      }
+      @keyframes ring {
+        from { transform: rotate(-22deg); }
+        to { transform: rotate(22deg); }
+      }
+      @keyframes boardIn {
+        from { opacity: 0; transform: translateY(40px) scale(0.97); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes rise {
+        from { opacity: 0; transform: translateY(18px); }
+        to { opacity: 1; transform: none; }
+      }
+      @keyframes write {
+        from { clip-path: inset(0 100% 0 0); opacity: 1; }
+        to { clip-path: inset(0 0 0 0); opacity: 1; }
+      }
+      @keyframes draw {
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes pin {
+        from { opacity: 0; transform: translateX(-30px) rotate(-4deg); }
+        to { opacity: 1; transform: none; }
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .intro { display: none; }
+      .underline path { stroke-dashoffset: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .board { padding: 34px 20px 28px; }
+      .timetable { grid-template-columns: 1fr; }
+      .tagline { font-size: 19px; }
     }
   </style>
 </head>
 <body>
-  <main>
-    <div class="avatar">D</div>
-    <h1>dasomaries-lion5</h1>
-    <p class="tagline">환영합니다. 제 홈페이지에 오신 것을 환영해요.</p>
+  <div class="intro" aria-hidden="true">
+    <svg class="bell-big" viewBox="0 0 64 64" fill="none" stroke="#f7d154" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M32 6v4"/>
+      <path d="M14 46c0-12 4-22 18-22s18 10 18 22l4 6H10z"/>
+      <path d="M26 56a6 6 0 0 0 12 0"/>
+      <circle cx="32" cy="8" r="2" fill="#f7d154"/>
+    </svg>
+    <p>수업 시작 종이 울렸어요</p>
+  </div>
 
-    <nav class="links">
-      <a href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">
+  <main class="board">
+    <div class="date" id="today"></div>
+
+    <svg class="bell" viewBox="0 0 64 64" fill="none" stroke="#f7d154" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M32 6v4"/>
+      <path d="M14 46c0-12 4-22 18-22s18 10 18 22l4 6H10z"/>
+      <path d="M26 56a6 6 0 0 0 12 0"/>
+      <circle cx="32" cy="8" r="2" fill="#f7d154"/>
+    </svg>
+
+    <h1>dasomaries-lion5의 교실</h1>
+    <svg class="underline" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M4 9 C 70 2, 150 14, 296 5"/>
+    </svg>
+    <p class="tagline">오늘도 환영해요, 자리에 앉아 주세요</p>
+
+    <nav class="timetable" aria-label="홈페이지 바로가기">
+      <a class="subject" href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">
+        <span class="period">1교시</span>
         <strong>GitHub 프로필</strong>
-        <span>github.com/dasomaries-lion5</span>
+        <span class="desc">github.com/dasomaries-lion5</span>
       </a>
-      <a href="https://github.com/dasomaries-lion5?tab=repositories" target="_blank" rel="noopener">
+      <a class="subject second" href="https://github.com/dasomaries-lion5?tab=repositories" target="_blank" rel="noopener">
+        <span class="period">2교시</span>
         <strong>레포지토리</strong>
-        <span>진행 중인 프로젝트 모아보기</span>
+        <span class="desc">진행 중인 프로젝트 모아보기</span>
       </a>
     </nav>
 
-    <footer>&copy; <span id="year"></span> dasomaries-lion5. GitHub Pages로 제작.</footer>
+    <div class="notice"><b>알림장</b> 홈페이지는 GitHub Pages로 운영 중이에요. 궁금한 점은 GitHub에서 찾아 주세요.</div>
+
+    <footer>&copy; <span id="year"></span> dasomaries-lion5 · 수업 끝 종은 언제든 울려요</footer>
   </main>
+
   <script>
     document.getElementById("year").textContent = new Date().getFullYear();
+    const d = new Date();
+    const days = ["일", "월", "화", "수", "목", "금", "토"];
+    document.getElementById("today").innerHTML =
+      d.getFullYear() + "년 " + (d.getMonth() + 1) + "월 " + d.getDate() + "일 <b>" + days[d.getDay()] + "요일</b>";
   </script>
 </body>
 </html>
