@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dasomaries-lion5 | Home</title>
+  <meta name="description" content="dasomaries-lion5의 홈페이지">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", Roboto, sans-serif;
+      background: radial-gradient(circle at top, #1e3a5f 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    main { width: 100%; max-width: 640px; text-align: center; }
+    .avatar {
+      width: 96px; height: 96px; border-radius: 50%;
+      border: 3px solid var(--accent);
+      margin: 0 auto 20px;
+      display: grid; place-items: center;
+      font-size: 36px; font-weight: 700; color: var(--accent);
+      background: var(--card);
+    }
+    h1 { font-size: 2rem; margin-bottom: 8px; }
+    .tagline { color: var(--muted); margin-bottom: 32px; }
+    .links {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr;
+      margin-bottom: 40px;
+    }
+    .links a {
+      display: block;
+      padding: 16px 20px;
+      background: var(--card);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      color: var(--text);
+      text-decoration: none;
+      transition: transform .15s ease, border-color .15s ease;
+    }
+    .links a:hover { transform: translateY(-2px); border-color: var(--accent); }
+    .links strong { display: block; font-size: 1.05rem; }
+    .links span { color: var(--muted); font-size: .9rem; }
+    footer { color: var(--muted); font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="avatar">D</div>
+    <h1>dasomaries-lion5</h1>
+    <p class="tagline">환영합니다. 제 홈페이지에 오신 것을 환영해요.</p>
+
+    <nav class="links">
+      <a href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">
+        <strong>GitHub 프로필</strong>
+        <span>github.com/dasomaries-lion5</span>
+      </a>
+      <a href="https://github.com/dasomaries-lion5?tab=repositories" target="_blank" rel="noopener">
+        <strong>레포지토리</strong>
+        <span>진행 중인 프로젝트 모아보기</span>
+      </a>
+    </nav>
+
+    <footer>&copy; <span id="year"></span> dasomaries-lion5. GitHub Pages로 제작.</footer>
+  </main>
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
