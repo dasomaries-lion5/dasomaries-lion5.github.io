@@ -452,12 +452,12 @@
       return { el, L, order };
     }).sort((a, b) => a.order - b.order);
 
-    const SPEED = 560; // 펜 이동 속도 (단위/초)
+    const SPEED = 1150; // 펜 이동 속도 (단위/초)
     let cursor = 0;
     const segs = lines.map(o => {
-      const dur = Math.max(200, (o.L / SPEED) * 1000);
+      const dur = Math.max(140, (o.L / SPEED) * 1000);
       const seg = { ...o, s: cursor, e: cursor + dur };
-      cursor += dur + 50;
+      cursor += dur + 30;
       return seg;
     });
     const drawTotal = cursor;
