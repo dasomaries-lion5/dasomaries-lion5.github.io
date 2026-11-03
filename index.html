@@ -10,25 +10,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --board: #3ba37c;
-      --board-dark: #2b8c66;
-      --chalk: #ffffff;
-      --chalk-dim: #f0fff7;
-      --wood: #e8b06a;
-      --wood-light: #f8d396;
-      --yellow: #ffd23f;
-      --red: #ff7a6b;
-      --blue: #7fd3ff;
+      --bg: #f4ead7;
+      --paper: #fbf5e8;
+      --ink: #3d3126;
+      --ink-dim: #7a6a57;
+      --accent: #f2b33d;
+      --accent-dark: #c98a12;
+      --coral: #e07a5f;
+      --coral-dark: #b85a40;
+      --sky: #6fb7d9;
       --ease: cubic-bezier(0.16, 1, 0.3, 1);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; }
     body {
       font-family: "Gaegu", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
-      color: var(--chalk);
+      color: var(--ink);
       background:
-        radial-gradient(ellipse at 50% 0%, rgb(255 255 255 / 0.08), transparent 60%),
-        linear-gradient(180deg, var(--board) 0%, var(--board-dark) 100%);
+        radial-gradient(ellipse at 50% 0%, #fff8e6 0%, transparent 60%),
+        var(--bg);
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -37,31 +37,38 @@
       overflow-x: hidden;
     }
 
-    /* ── 칠판 ── */
+    /* ── 공책 페이지 ── */
     .board {
       position: relative;
       width: 100%;
       max-width: 720px;
-      padding: 44px 40px 36px;
-      border-radius: 14px;
-      background: var(--board);
-      box-shadow:
-        inset 0 0 60px rgb(0 0 0 / 0.12),
-        0 0 0 12px var(--wood),
-        0 0 0 14px var(--wood-light),
-        0 30px 60px -20px rgb(0 0 0 / 0.6);
+      padding: 44px 48px 36px 72px;
+      border-radius: 16px;
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(
+        180deg, transparent 0 35px, rgb(122 106 87 / 0.14) 35px 36px
+      );
+      background-position: 0 44px;
+      box-shadow: 0 24px 50px -24px rgb(61 49 38 / 0.45), 0 2px 0 rgb(61 49 38 / 0.04);
       text-align: center;
     }
-    .board::after {
+    .board::before {
+      /* 공책 빨간 여백선 */
       content: "";
-      position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-      background:
-        radial-gradient(circle at 15% 20%, rgb(255 255 255 / 0.05) 0 2px, transparent 3px),
-        radial-gradient(circle at 80% 70%, rgb(255 255 255 / 0.04) 0 2px, transparent 3px),
-        linear-gradient(115deg, transparent 40%, rgb(255 255 255 / 0.04) 50%, transparent 60%);
+      position: absolute; top: 0; bottom: 0; left: 52px; width: 2px;
+      background: rgb(224 122 95 / 0.55);
+      border-radius: 2px;
     }
-    .date { font-size: 18px; color: var(--chalk-dim); letter-spacing: 0.02em; }
-    .date b { color: var(--yellow); font-weight: 700; }
+    .board::after {
+      /* 상단 스프링 구멍 느낌 */
+      content: "";
+      position: absolute; left: 0; right: 0; top: 0; height: 10px;
+      border-radius: 16px 16px 0 0;
+      background: linear-gradient(90deg, var(--accent) 0 100%);
+      opacity: 0.85;
+    }
+    .date { font-size: 18px; color: var(--ink-dim); letter-spacing: 0.02em; }
+    .date b { color: var(--accent-dark); font-weight: 700; }
     .bell {
       display: block;
       width: 64px; height: 64px;
@@ -75,105 +82,104 @@
     }
     .underline { display: block; width: 62%; height: 14px; margin: 0 auto 20px; }
     .underline path {
-      fill: none; stroke: var(--yellow); stroke-width: 4; stroke-linecap: round;
+      fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round;
       stroke-dasharray: 300; stroke-dashoffset: 300;
     }
-    .tagline { font-size: 22px; color: var(--chalk-dim); }
+    .tagline { font-size: 22px; color: var(--ink-dim); }
 
     .timetable { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 36px 0 30px; }
     .subject {
       position: relative;
       display: block;
       padding: 22px 20px 18px;
-      border: 2px dashed rgb(244 241 232 / 0.55);
-      border-radius: 10px;
-      color: var(--chalk);
+      background: #fffdf7;
+      border: 2px solid rgb(61 49 38 / 0.12);
+      border-radius: 14px;
+      color: var(--ink);
       text-decoration: none;
-      transition: transform .45s var(--ease), border-color .45s var(--ease), background .45s var(--ease);
+      box-shadow: 0 6px 0 -2px rgb(61 49 38 / 0.08);
+      transition: transform .45s var(--ease), border-color .45s var(--ease), box-shadow .45s var(--ease);
     }
     .subject:hover, .subject:focus-visible {
       transform: translateY(-4px) rotate(-1deg);
-      border-color: var(--yellow);
-      background: rgb(255 255 255 / 0.04);
+      border-color: var(--accent);
+      box-shadow: 0 14px 24px -14px rgb(61 49 38 / 0.45);
     }
     .period {
       display: inline-block; padding: 2px 12px; border-radius: 999px;
-      font-size: 15px; font-weight: 700; color: var(--board-dark); background: var(--yellow);
+      font-size: 15px; font-weight: 700; color: var(--ink); background: var(--accent);
     }
-    .subject.second .period { background: var(--blue); }
+    .subject.second .period { background: var(--sky); }
     .subject strong { display: block; margin-top: 12px; font-size: 24px; }
-    .subject span.desc { display: block; margin-top: 4px; font-size: 16px; color: var(--chalk-dim); }
+    .subject span.desc { display: block; margin-top: 4px; font-size: 16px; color: var(--ink-dim); }
 
     .notice {
       margin: 0 auto;
       max-width: 460px;
       padding: 14px 18px;
       font-size: 17px;
-      color: var(--chalk);
-      background: rgb(255 255 255 / 0.2);
+      color: var(--ink);
+      background: #fffdf7;
       border-radius: 10px;
-      border-left: 5px solid var(--red);
+      border: 1px solid rgb(61 49 38 / 0.1);
+      border-left: 5px solid var(--coral);
       text-align: left;
     }
-    .notice b { color: var(--red); }
-    footer { margin-top: 28px; font-size: 15px; color: var(--chalk-dim); }
-
-    body, .board, .intro { text-shadow: 0 1px 2px rgb(0 0 0 / 0.15); }
-    .intro-title { text-shadow: 0 2px 10px rgb(0 0 0 / 0.2); }
+    .notice b { color: var(--coral-dark); }
+    footer { margin-top: 28px; font-size: 15px; color: var(--ink-dim); }
 
     /* ── 인트로 모션 그래픽 (약 5초) ── */
     .intro {
       position: fixed; inset: 0; z-index: 10;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
       background:
-        radial-gradient(ellipse at 50% 40%, #fff3b0 0%, rgb(255 243 176 / 0) 60%),
-        var(--board-dark);
+        radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%),
+        var(--bg);
       overflow: hidden;
-      color: var(--chalk);
+      color: var(--ink);
     }
     .dust {
       position: absolute; width: 4px; height: 4px; border-radius: 50%;
-      background: rgb(255 255 255 / 0.5);
+      background: rgb(140 100 60 / 0.35);
       filter: blur(0.5px);
       animation: float 6s ease-in-out infinite;
     }
     .stage { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
     .ring {
       position: absolute; inset: 0; border-radius: 50%;
-      border: 2px solid rgb(247 209 84 / 0.8);
+      border: 2px solid rgb(242 179 61 / 0.7);
       opacity: 0;
     }
     .intro-bell { width: 92px; height: 92px; transform-origin: 50% 0; position: relative; }
     .intro-bell path {
-      stroke: var(--yellow); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;
+      stroke: var(--accent-dark); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;
       stroke-dasharray: 1 1;
     }
-    .intro-bell circle { fill: var(--yellow); opacity: 0; }
+    .intro-bell circle { fill: var(--accent-dark); opacity: 0; }
     .intro-title {
       position: relative;
       font-size: clamp(34px, 6vw, 52px); font-weight: 700; letter-spacing: 0.04em;
       display: flex; gap: 0.12em; justify-content: center; margin-top: 18px;
     }
     .intro-title .ch { display: inline-block; }
-    .intro-sub { font-size: 20px; color: var(--chalk-dim); opacity: 0; }
+    .intro-sub { font-size: 20px; color: var(--ink-dim); opacity: 0; }
     .flash {
       position: absolute; inset: 0; pointer-events: none; opacity: 0;
-      background: radial-gradient(circle at 50% 40%, rgb(255 246 214 / 0.85), rgb(255 246 214 / 0.2) 45%, transparent 70%);
+      background: radial-gradient(circle at 50% 40%, rgb(255 252 240 / 0.9), rgb(255 252 240 / 0.25) 45%, transparent 70%);
     }
     .skip-btn {
       position: fixed; right: 20px; bottom: 20px; z-index: 11;
-      padding: 8px 16px; border-radius: 999px; font: inherit; font-size: 15px; color: var(--chalk);
-      background: rgb(255 255 255 / 0.08); border: 1px dashed rgb(244 241 232 / 0.5); cursor: pointer;
+      padding: 8px 16px; border-radius: 999px; font: inherit; font-size: 15px; color: var(--ink);
+      background: rgb(255 255 255 / 0.6); border: 1px dashed rgb(61 49 38 / 0.35); cursor: pointer;
     }
-    .skip-btn:hover { border-color: var(--yellow); color: var(--yellow); }
+    .skip-btn:hover { border-color: var(--accent-dark); color: var(--accent-dark); }
 
     /* ── 모션 ── */
     @media (prefers-reduced-motion: no-preference) {
       .intro { animation: introIn .4s ease both, curtain .8s var(--ease) 4.5s both; }
-      .dust { animation: float 6s ease-in-out infinite; }
       .intro-bell path { animation: draw .9s ease .3s both; }
-      .intro-bell circle { animation: fadeIn .4s ease 1.2s forwards; }
       .intro-bell { animation: wobble 1.4s ease 1.3s both; }
+      .intro-bell circle { animation: fadeIn .4s ease 1.2s forwards; }
       .ring { animation: wave 1.2s ease-out both; }
       .ring:nth-child(2) { animation-delay: 1.45s; }
       .ring:nth-child(3) { animation-delay: 1.6s; }
@@ -257,7 +263,8 @@
     }
 
     @media (max-width: 560px) {
-      .board { padding: 34px 20px 28px; }
+      .board { padding: 34px 20px 28px 44px; }
+      .board::before { left: 30px; }
       .timetable { grid-template-columns: 1fr; }
       .tagline { font-size: 19px; }
     }
@@ -283,11 +290,11 @@
   <main class="board">
     <div class="date" id="today"></div>
 
-    <svg class="bell" viewBox="0 0 64 64" fill="none" stroke="#f7d154" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg class="bell" viewBox="0 0 64 64" fill="none" stroke="#c98a12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <path d="M32 6v4"/>
       <path d="M14 46c0-12 4-22 18-22s18 10 18 22l4 6H10z"/>
       <path d="M26 56a6 6 0 0 0 12 0"/>
-      <circle cx="32" cy="8" r="2" fill="#f7d154"/>
+      <circle cx="32" cy="8" r="2" fill="#c98a12"/>
     </svg>
 
     <h1>dasomaries-lion5의 교실</h1>
@@ -315,7 +322,7 @@
   </main>
 
   <script>
-    // 인트로 글자 하나씩 분필로 쓰기
+    // 인트로 글자 하나씩 쓰기
     const introTitle = document.getElementById("introTitle");
     const introText = introTitle.textContent;
     introTitle.textContent = "";
