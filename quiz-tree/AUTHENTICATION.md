@@ -45,3 +45,11 @@ PDF text extraction runs in the teacher's browser using PDF.js from cdnjs. PDF b
 `node tests/classroom.test.mjs` exercises the real API handlers with an in-memory D1 adapter: teacher authorization; thirty concurrent registrations with unique IDs; all thirty admitted; same-name return; hidden answers; thirty concurrent submissions; speed ranking, ties, unanswered-time accounting; duplicate and late rejection; cumulative records across two rounds; cross-origin POST rejection. Run `npx tsc --noEmit` and the Sites build helper for type/build checks. This does not substitute for a live thirty-device classroom test.
 
 Legacy score history without elapsed timing is preserved; its time displays as an em dash instead of an invented duration. New races persist both points and elapsed milliseconds.
+
+## PIN, QR and images
+
+A six-digit room PIN is an alternate public classroom locator, not a teacher password. `room_pins` has unique constraints on both code and room; server-side generation retries collisions. Existing UUID links remain valid. A room keeps the same PIN for later sessions. `/api/classroom` `lookupPin` returns only the room ID, and `invite` is owner-only. QR images encode the UUID join URL and are generated locally with `qrcode`, without a third-party QR service. Neither entry method grants teacher rights. Lobby opening does not start question timing; only the owner's `next` action starts the first question.
+
+Image-material OCR uses Tesseract in the teacher's browser. The OCR engine and Korean/English language data are downloaded from its default CDN endpoints; photo pixels are processed locally. OCR output becomes editable source text and is stored only when reviewed questions are saved.
+
+Question illustration uploads use owner-authorized, same-origin `/api/image` multipart POST. The server checks room ownership, a 2MB file limit, and JPEG/PNG/WebP magic bytes; SVG/HTML is rejected. R2 stores raster bytes under room-scoped UUID keys. Question-bank records contain only scoped `/api/image` references, not arbitrary external URLs or inline megabyte strings. Image GET is public like the classroom link. Students see the illustration with the current question. Removing an image from a draft detaches it; it does not delete stored objects.

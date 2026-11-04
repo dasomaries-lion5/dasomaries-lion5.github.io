@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 class MemoryD1 {
- rows=new Map();
+ rows=new Map();pins=new Map();
  prepare(sql){
   const db=this;
   return {bind(...args){return {
-   async first(){return structuredClone(db.rows.get(args[0])||null);},
+   async first(){if(sql.includes('room_pins')){if(sql.includes('WHERE pin='))return db.pins.has(args[0])?{room:db.pins.get(args[0])}:null;const match=[...db.pins.entries()].find(([pin,room])=>room===args[0]);return match?{pin:match[0]}:null;}return structuredClone(db.rows.get(args[0])||null);},
    async all(){return {results:[...db.rows.values()].filter(r=>r.owner===args[0])};},
    async run(){
+    if(sql.includes('room_pins')){if(db.pins.has(args[0])||[...db.pins.values()].includes(args[1]))return {meta:{changes:0}};db.pins.set(args[0],args[1]);return {meta:{changes:1}};}
     if(sql.startsWith('INSERT')){
      db.rows.set(args[0],{id:args[0],owner:args[1],data:args[2],revision:0});
      return {meta:{changes:1}};
@@ -80,4 +81,33 @@ const initialSaved=await call('save',{questions:initialOnly.questions,quizMode:'
 assert.equal(initialSaved.status,200);assert.equal(initialSaved.data.quizMode,'initial');
 const initialRound=await call('start');assert.equal(initialRound.data.round.quizMode,'initial');
 const mixedSaved=await call('save',{questions:mixed.questions,quizMode:'mixed'});assert.equal(mixedSaved.data.quizMode,'mixed');assert.equal(mixedSaved.data.round.quizMode,'mixed');assert.equal(mixedSaved.data.round.count,4);
-console.log('PASS: mixed and initial-only generation, Korean initials, initial-only server validation, mode persistence and round snapshot; existing 30-player race and score tests');
+// PIN resolves a room without granting teacher rights; old rooms can obtain a stable code.
+assert(/^\d{6}$/.test(initialRound.data.pin));
+const codeLookup=await call('lookupPin',{pin:initialRound.data.pin},'',false);
+assert.equal(codeLookup.status,200);assert.equal(codeLookup.data.id,id);
+assert.equal((await call('lookupPin',{pin:'12'},'',false)).status,400);
+assert.equal((await call('lookupPin',{pin:'000000'},'',false)).status,404);
+assert.equal((await call('invite',{},'',false)).status,403);
+assert.equal((await call('invite')).data.pin,initialRound.data.pin);
+// Stored image references are scoped to the room and appear in the question sent to students.
+const image='/api/image?room='+encodeURIComponent(id)+'&key=abc-123.jpg';
+const pictured=initialOnly.questions.map((q,i)=>({...q,...(i===0?{image}:{})}));
+assert.equal((await call('save',{questions:pictured,quizMode:'initial'})).data.quiz[0].image,image);
+assert.equal((await call('save',{questions:[{...pictured[0],image:'https://external.test/image.svg'}],quizMode:'initial'})).status,400);
+const pinStudent=await call('join',{name:'PIN 참여 학생'},'',false);await call('confirm',{},pinStudent.data.token,false);
+assert.equal((await call('answer',{roundId:initialRound.data.round.id,index:0,answer:pictured[0].answer},pinStudent.data.token,false)).status,400,'Lobby opening does not start questions');
+const opened=await call('next');assert.equal(opened.data.round.question.image,image);
+// Image uploads require the room owner and accept raster bytes only.
+const bucket=new Map();globalThis.__quizTestEnv.BUCKET={async put(key,bytes,metadata){bucket.set(key,{body:bytes,...metadata})},async get(key){return bucket.get(key)}};
+const imageRaw=fs.readFileSync('app/api/image/route.ts','utf8').replace(/import \{env\} from 'cloudflare:workers';/,'const env=globalThis.__quizTestEnv;');
+const imageCode=ts.transpile(imageRaw,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
+const imageAPI=await import('data:text/javascript;base64,'+Buffer.from(imageCode).toString('base64'));
+async function uploadImage(owner,bytes,mime='image/png'){const form=new FormData();form.set('room',id);form.set('image',new File([bytes],'test.png',{type:mime}));return imageAPI.POST(new Request('https://quiz.test/api/image',{method:'POST',headers:{origin:'https://quiz.test',...(owner?{'oai-authenticated-user-id':owner}:{})},body:form}));}
+const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=','base64');
+assert.equal((await uploadImage('',png)).status,401);assert.equal((await uploadImage('other-teacher',png)).status,403);
+assert.equal((await uploadImage('teacher',Buffer.from('<svg onload="alert(1)"></svg>'),'image/svg+xml')).status,400);
+assert.equal((await uploadImage('teacher',new Uint8Array(2*1024*1024+1))).status,400);
+const uploaded=await uploadImage('teacher',png);assert.equal(uploaded.status,200);const savedImage=await uploaded.json();
+const fetchedImage=await imageAPI.GET(new Request('https://quiz.test'+savedImage.image));assert.equal(fetchedImage.status,200);assert.equal(fetchedImage.headers.get('content-type'),'image/png');assert.deepEqual(Buffer.from(await fetchedImage.arrayBuffer()),png);
+const QRCode=(await import('qrcode')).default;const qr=await QRCode.toDataURL('https://quiz.test/?room='+id,{width:300,margin:3});assert(qr.startsWith('data:image/png;base64,'));
+console.log('PASS: PIN lookup/uniqueness, teacher authorization, explicit lobby start, scoped images, owner-only raster uploads, size rejection, image delivery, local QR encoding; mixed/initial and 30-player race regression');
