@@ -23,7 +23,10 @@ class MemoryD1 {
  }
 }
 globalThis.__quizTestEnv={DB:new MemoryD1()};
-const raw=fs.readFileSync('app/api/classroom/route.ts','utf8').replace(/import \{env\} from 'cloudflare:workers';/, 'const env=globalThis.__quizTestEnv;');
+const raceCode=ts.transpile(fs.readFileSync('lib/race.ts','utf8'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
+const raceUrl='data:text/javascript;base64,'+Buffer.from(raceCode).toString('base64');
+const {compareRace,raceScores,raceRank,raceDistance}=await import(raceUrl);
+const raw=fs.readFileSync('app/api/classroom/route.ts','utf8').replace(/import \{env\} from 'cloudflare:workers';/, 'const env=globalThis.__quizTestEnv;').replace("'../../../lib/race'",JSON.stringify(raceUrl));
 const code=ts.transpile(raw,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
 const {GET,POST}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
 let id;async function call(action,extra={},token='',host=true){const response=await POST(new Request('https://quiz.test/api/classroom',{method:'POST',headers:{origin:'https://quiz.test','content-type':'application/json',...(host?{'oai-authenticated-user-id':'teacher'}:{}),'x-student-token':token},body:JSON.stringify({id,action,...extra})}));return {status:response.status,data:await response.json()}}
@@ -33,15 +36,15 @@ const questions=[{type:'주관식',prompt:'인공지능의 영문 약자는?',an
 assert.equal((await call('save',{questions},'',false)).status,403);
 assert.equal((await call('save',{questions})).status,200);
 assert.equal((await call('start',{seconds:30})).status,200);
-const joined=await Promise.all(Array.from({length:11},(_,i)=>call('join',{name:'학생'+(i+1)},'',false)));
-assert(joined.every(x=>x.status===200));assert.equal(new Set(joined.map(x=>x.data.me.id)).size,11);
+const joined=await Promise.all(Array.from({length:30},(_,i)=>call('join',{name:'학생'+(i+1)},'',false)));
+assert(joined.every(x=>x.status===200));assert.equal(new Set(joined.map(x=>x.data.me.id)).size,30);
 const confirmations=await Promise.all(joined.map(s=>call('confirm',{},s.data.token,false)));
-assert.equal(confirmations.filter(x=>x.status===200).length,10);assert.equal(confirmations.filter(x=>x.status===400).length,1);
+assert.equal(confirmations.filter(x=>x.status===200).length,30);
 const student=joined[0];const sid=student.data.me.id,token=student.data.token;
 const again=await call('join',{name:'학생1'},'',false);assert.equal(again.data.me.id,sid);assert.equal(again.data.me.confirmed,true);
 const started=await call('next');assert.equal(started.data.round.phase,'question');
 const state=await GET(new Request('https://quiz.test/api/classroom?id='+id,{headers:{'x-student-token':token}}));const safe=await state.json();assert.equal(safe.quiz,undefined);assert.equal(safe.round.question.answer,undefined);assert(!JSON.stringify(safe).includes('tokens'));
-const submissions=await Promise.all(joined.slice(0,10).map(s=>call('answer',{roundId:started.data.round.id,index:0,answer:' ai '},s.data.token,false)));
+const submissions=await Promise.all(joined.map(s=>call('answer',{roundId:started.data.round.id,index:0,answer:' ai '},s.data.token,false)));
 assert(submissions.every(x=>x.status===200));
 assert.equal((await call('answer',{roundId:started.data.round.id,index:0,answer:'AI'},token,false)).status,400);
 assert.equal((await call('next',{},token,false)).status,403);
@@ -51,4 +54,14 @@ assert.equal((await call('finish')).status,400);
 const row=globalThis.__quizTestEnv.DB.rows.get(id);let c=JSON.parse(row.data);c.round.phase='question';c.round.deadline=Date.now()-100;c.round.answers={};row.data=JSON.stringify(c);
 assert.equal((await call('answer',{roundId:c.round.id,index:0,answer:'AI'},token,false)).status,400);
 const badOrigin=await POST(new Request('https://quiz.test/api/classroom',{method:'POST',headers:{origin:'https://other.test'},body:'{}'}));assert.equal(badOrigin.status,403);
-console.log('PASS: owner authorization, 11 concurrent registrations, unique IDs, 10-player limit, same-name rejoin, hidden answers, 10 concurrent answers, duplicate/late rejection, two-round cumulative history, origin check');
+// Equal accuracy is ranked by shorter server-measured time; a fast wrong answer never beats a correct answer.
+assert(compareRace({right:2,elapsedMs:5000},{right:2,elapsedMs:9000})<0);
+assert(compareRace({right:1,elapsedMs:9000},{right:0,elapsedMs:100})<0);
+assert.equal(raceRank([{id:1},{id:2},{id:3}],{1:{right:1,elapsedMs:1000},2:{right:1,elapsedMs:1000},3:{right:1,elapsedMs:2000}},2),1);
+assert(raceDistance({right:49,elapsedMs:1500000},50,30)>raceDistance({right:48,elapsedMs:0},50,30));
+assert(raceDistance({right:2,elapsedMs:3000},4,30)>raceDistance({right:2,elapsedMs:5000},4,30));
+const measured=raceScores({participants:[1,2,3],seconds:30,questionStarts:[1000,5000],questionEnds:[4000,9000],answers:{1:{0:{correct:true,points:1000,at:2000,elapsedMs:1000},1:{correct:true,points:1000,at:7000,elapsedMs:2000}},2:{0:{correct:true,points:1000,at:3000,elapsedMs:2000}},3:{}}},9000);
+assert.equal(measured[1].elapsedMs,3000);assert.equal(measured[2].elapsedMs,6000);assert.equal(measured[3].elapsedMs,7000);
+assert.equal(finished.data.history[0].scores[sid].elapsedMs,finished.data.round.scores[sid].elapsedMs);
+assert.equal(f2.data.round.participants.length,1,'Small-group rehearsal remains possible; 10 is supported capacity, not a start gate');
+console.log('PASS: 30 concurrent registrations, unique IDs, all 30 admitted and submitting, same-name rejoin, owner authorization, hidden answers, duplicate/late rejection, cumulative history, measured timings, accuracy-first speed ranking and ties, small-group rehearsal, origin check');

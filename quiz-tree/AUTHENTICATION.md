@@ -12,7 +12,7 @@ The token remains in the password field and request headers. If the user checks 
 
 - `app/page.tsx`: teacher setup and student join/game UI; polls the server every 1.2 seconds. Local storage keeps recent room links and the student's opaque participation token.
 - `app/api/classroom/route.ts`: server authorization, name/number reservation, confirmation, game lifecycle, deadline enforcement, scoring, cumulative records.
-- `db/schema.ts` and `drizzle/`: D1 `classrooms` table. A room has a stable owner identity, JSON state, and revision number. Updates compare the revision and retry on conflicts, preserving concurrent answers and limiting rounds to ten participants.
+- `db/schema.ts` and `drizzle/`: D1 `classrooms` table. A room has a stable owner identity, JSON state, and revision number. Updates compare the revision and retry on conflicts, preserving concurrent answers without a ten-player cap. Thirty simultaneous registrations and submissions are covered by the handler tests.
 - Sites dispatch: ChatGPT sign-in and identity-header injection. It owns OAuth cookies and reserved sign-in routes; the quiz server never receives or stores an OpenAI/GitHub API credential.
 
 ### Teacher flow
@@ -29,8 +29,8 @@ The application trusts identity headers only because production requests pass th
 1. A student opens an unguessable room UUID link without a PIN or account.
 2. The server normalizes Unicode and whitespace, then matches the exact name within that room. A new name receives the next stable number; an existing name reuses its number and history.
 3. The server issues a random UUID token, stores it in that student's server-side token list, and returns it to the browser. The browser keeps it as `qt-token-<room-id>` and sends `x-student-token` on requests. Up to eight recent device sessions per name remain valid.
-4. Confirmation locks the displayed name/number and enrolls the student into an open lobby, with the ten-player check in the same revision-protected update.
-5. Server validates token, participant membership, round ID, question index, deadline and duplicate answer before scoring. A correct answer earns 1,000 points. Ending a round appends a separate record with Korea time; totals sum completed records.
+4. Confirmation locks the displayed name/number and enrolls the student into an open lobby, in the same revision-protected update. Ten or more participants are supported; a small group may also rehearse.
+5. Server validates token, participant membership, round ID, question index, deadline and duplicate answer before scoring. A correct answer earns 1,000 points. Each answer also records elapsed milliseconds measured server-side from its question opening. Race positions sort by correct-answer count descending, then total elapsed time ascending. Unanswered opened questions accrue time up to the teacher reveal or deadline; teacher waiting time between questions is excluded. Ending a round appends a separate record with Korea time; totals sum completed records.
 
 Name-based recognition is intentionally a classroom convenience, not verified student identity: anyone with the room link who enters the same name can access that name's participation record. Use distinguishable classroom nicknames for same-name students and distribute the link to the intended class. No student token grants teacher permission. Tokens are not logged or committed. Question-bank edits are not available during an active game.
 
@@ -42,4 +42,6 @@ PDF text extraction runs in the teacher's browser using PDF.js from cdnjs. PDF b
 
 ## Validation
 
-`node tests/classroom.test.mjs` exercises the real API handlers with an in-memory D1 adapter: teacher authorization; eleven concurrent registrations with unique IDs; ten-player cap; same-name return; hidden answers; ten concurrent submissions; duplicate and late rejection; cumulative records across two rounds; cross-origin POST rejection. Run `npx tsc --noEmit` and the Sites build helper for type/build checks. This does not substitute for a live ten-device classroom test.
+`node tests/classroom.test.mjs` exercises the real API handlers with an in-memory D1 adapter: teacher authorization; thirty concurrent registrations with unique IDs; all thirty admitted; same-name return; hidden answers; thirty concurrent submissions; speed ranking, ties, unanswered-time accounting; duplicate and late rejection; cumulative records across two rounds; cross-origin POST rejection. Run `npx tsc --noEmit` and the Sites build helper for type/build checks. This does not substitute for a live thirty-device classroom test.
+
+Legacy score history without elapsed timing is preserved; its time displays as an em dash instead of an invented duration. New races persist both points and elapsed milliseconds.
