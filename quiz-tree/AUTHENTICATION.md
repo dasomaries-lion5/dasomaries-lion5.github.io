@@ -53,3 +53,11 @@ A six-digit room PIN is an alternate public classroom locator, not a teacher pas
 Image-material OCR uses Tesseract in the teacher's browser. The OCR engine and Korean/English language data are downloaded from its default CDN endpoints; photo pixels are processed locally. OCR output becomes editable source text and is stored only when reviewed questions are saved.
 
 Question illustration uploads use owner-authorized, same-origin `/api/image` multipart POST. The server checks room ownership, a 2MB file limit, and JPEG/PNG/WebP magic bytes; SVG/HTML is rejected. R2 stores raster bytes under room-scoped UUID keys. Question-bank records contain only scoped `/api/image` references, not arbitrary external URLs or inline megabyte strings. Image GET is public like the classroom link. Students see the illustration with the current question. Removing an image from a draft detaches it; it does not delete stored objects.
+
+## Monthly aggregation and administration
+
+The server reads only classrooms whose owner equals the current room's owner, aggregates historical scores by normalized student name, and selects the current Asia/Seoul calendar month. Existing records with local date strings remain readable. No points from another teacher are merged. Student responses contain only the current room roster with its monthly totals; the complete cross-room monthly roster is owner-only.
+
+The schema-only teacher_state migration adds revision-protected owner settings for individual/global reset and deletion cutoffs. Owner-only resetScores and deleteStudents actions reject active games across all owned rooms. Reset keeps game history and changes the aggregation cutoff. Delete records a revocation cutoff first, then revision-protected purges remove students, their answers and scores across owned classrooms; delete-all clears those histories. Old tokens stop resolving; new registration is allowed with a fresh student record. These controls are never triggered merely by opening a page or deploying.
+
+Speed awards use server-measured answer times already recorded by the quiz handler and require all questions answered; client-provided durations are ignored. A shorter elapsed time wins the speed award independently of the accuracy-first main ranking.

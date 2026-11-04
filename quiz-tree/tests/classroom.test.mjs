@@ -3,13 +3,14 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import ts from 'typescript';
 class MemoryD1 {
- rows=new Map();pins=new Map();
+ rows=new Map();pins=new Map();states=new Map();
  prepare(sql){
   const db=this;
   return {bind(...args){return {
-   async first(){if(sql.includes('room_pins')){if(sql.includes('WHERE pin='))return db.pins.has(args[0])?{room:db.pins.get(args[0])}:null;const match=[...db.pins.entries()].find(([pin,room])=>room===args[0]);return match?{pin:match[0]}:null;}return structuredClone(db.rows.get(args[0])||null);},
+   async first(){if(sql.includes('teacher_state'))return structuredClone(db.states.get(args[0])||null);if(sql.includes('room_pins')){if(sql.includes('WHERE pin='))return db.pins.has(args[0])?{room:db.pins.get(args[0])}:null;const match=[...db.pins.entries()].find(([pin,room])=>room===args[0]);return match?{pin:match[0]}:null;}return structuredClone(db.rows.get(args[0])||null);},
    async all(){return {results:[...db.rows.values()].filter(r=>r.owner===args[0])};},
    async run(){
+    if(sql.includes('teacher_state')){if(sql.startsWith('INSERT')){if(!db.states.has(args[0]))db.states.set(args[0],{owner:args[0],data:args[1],revision:0});return {meta:{changes:1}}}const state=db.states.get(args[1]);if(state.revision!==args[2])return {meta:{changes:0}};state.data=args[0];state.revision++;return {meta:{changes:1}};}
     if(sql.includes('room_pins')){if(db.pins.has(args[0])||[...db.pins.values()].includes(args[1]))return {meta:{changes:0}};db.pins.set(args[0],args[1]);return {meta:{changes:1}};}
     if(sql.startsWith('INSERT')){
      db.rows.set(args[0],{id:args[0],owner:args[1],data:args[2],revision:0});
@@ -27,10 +28,13 @@ globalThis.__quizTestEnv={DB:new MemoryD1()};
 const raceCode=ts.transpile(fs.readFileSync('lib/race.ts','utf8'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
 const raceUrl='data:text/javascript;base64,'+Buffer.from(raceCode).toString('base64');
 const {compareRace,raceScores,raceRank,raceDistance}=await import(raceUrl);
-const raw=fs.readFileSync('app/api/classroom/route.ts','utf8').replace(/import \{env\} from 'cloudflare:workers';/, 'const env=globalThis.__quizTestEnv;').replace("'../../../lib/race'",JSON.stringify(raceUrl));
+const monthlyCode=ts.transpile(fs.readFileSync('lib/monthly.ts','utf8'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
+const monthlyUrl='data:text/javascript;base64,'+Buffer.from(monthlyCode).toString('base64');
+const {monthlySummary,monthKey}=await import(monthlyUrl);
+const raw=fs.readFileSync('app/api/classroom/route.ts','utf8').replace(/import \{env\} from 'cloudflare:workers';/, 'const env=globalThis.__quizTestEnv;').replace("'../../../lib/race'",JSON.stringify(raceUrl)).replace("'../../../lib/monthly'",JSON.stringify(monthlyUrl));
 const code=ts.transpile(raw,{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
 const {GET,POST}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
-let id;async function call(action,extra={},token='',host=true){const response=await POST(new Request('https://quiz.test/api/classroom',{method:'POST',headers:{origin:'https://quiz.test','content-type':'application/json',...(host?{'oai-authenticated-user-id':'teacher'}:{}),'x-student-token':token},body:JSON.stringify({id,action,...extra})}));return {status:response.status,data:await response.json()}}
+let ownerLogin='teacher';let id;async function call(action,extra={},token='',host=true){const response=await POST(new Request('https://quiz.test/api/classroom',{method:'POST',headers:{origin:'https://quiz.test','content-type':'application/json',...(host?{'oai-authenticated-user-id':ownerLogin}:{}),'x-student-token':token},body:JSON.stringify({id,action,...extra})}));return {status:response.status,data:await response.json()}}
 const noLogin=await call('create',{},'',false);assert.equal(noLogin.status,401);
 const created=await call('create');assert.equal(created.status,200);id=created.data.id;
 const questions=[{type:'주관식',prompt:'인공지능의 영문 약자는?',answer:'AI',options:[],explanation:'Artificial Intelligence'}];
@@ -110,4 +114,31 @@ assert.equal((await uploadImage('teacher',new Uint8Array(2*1024*1024+1))).status
 const uploaded=await uploadImage('teacher',png);assert.equal(uploaded.status,200);const savedImage=await uploaded.json();
 const fetchedImage=await imageAPI.GET(new Request('https://quiz.test'+savedImage.image));assert.equal(fetchedImage.status,200);assert.equal(fetchedImage.headers.get('content-type'),'image/png');assert.deepEqual(Buffer.from(await fetchedImage.arrayBuffer()),png);
 const QRCode=(await import('qrcode')).default;const qr=await QRCode.toDataURL('https://quiz.test/?room='+id,{width:300,margin:3});assert(qr.startsWith('data:image/png;base64,'));
-console.log('PASS: PIN lookup/uniqueness, teacher authorization, explicit lobby start, scoped images, owner-only raster uploads, size rejection, image delivery, local QR encoding; mixed/initial and 30-player race regression');
+// Regression: one teacher's same-name totals follow students into a new room.
+ownerLogin='monthly-teacher';
+const roomA=await call('create');id=roomA.data.id;
+const old=await call('join',{name:'김민수'},'',false);await call('confirm',{},old.data.token,false);
+let a=globalThis.__quizTestEnv.DB.rows.get(id),ca=JSON.parse(a.data);ca.history=[{id:'old-round',date:'2026-11-01 09:00:00',at:Date.now()-5000,names:{[old.data.me.id]:'김민수'},scores:{[old.data.me.id]:{score:2000,right:2,total:3}}}];a.data=JSON.stringify(ca);
+const roomB=await call('create');id=roomB.data.id;const fresh=await call('join',{name:' 김민수 '},'',false);await call('confirm',{},fresh.data.token,false);
+const newRoomState=await GET(new Request('https://quiz.test/api/classroom?id='+id,{headers:{'x-student-token':fresh.data.token}}));assert.equal((await newRoomState.json()).people.find(p=>p.name==='김민수').total,2000);
+assert.equal((await call('resetScores',{name:'김민수'},fresh.data.token,false)).status,403);
+assert.equal((await call('resetScores',{name:'김민수'})).data.monthlyPeople.find(p=>p.name==='김민수').total,0);
+assert.equal(JSON.parse(globalThis.__quizTestEnv.DB.rows.get(roomA.data.id).data).history.length,1,'A reset preserves historical game records');
+// A different teacher's record never joins these totals.
+const isolated={...ca,id:'other-room',history:[{...ca.history[0],at:Date.now()+100, scores:{[old.data.me.id]:{score:99000}}}]};globalThis.__quizTestEnv.DB.rows.set('other-room',{id:'other-room',owner:'different-teacher',data:JSON.stringify(isolated),revision:0});
+assert.equal((await call('invite')).data.monthlyPeople.find(p=>p.name==='김민수').total,0);
+assert.equal((await call('deleteStudents',{name:'김민수'})).data.monthlyPeople.length,0);
+for(const room of [roomA.data.id,roomB.data.id]){const c=JSON.parse(globalThis.__quizTestEnv.DB.rows.get(room).data);assert.equal(Object.keys(c.students).length,0);assert(c.history.every(h=>Object.keys(h.scores).length===0));}
+const oldTokenState=await GET(new Request('https://quiz.test/api/classroom?id='+id,{headers:{'x-student-token':fresh.data.token}}));assert.equal((await oldTokenState.json()).me,null);
+const rejoined=await call('join',{name:'김민수'},'',false);assert.equal(rejoined.status,200);assert.equal(rejoined.data.me.confirmed,false);await call('confirm',{},rejoined.data.token,false);
+assert.equal((await call('resetScores',{all:true})).status,200);
+assert.equal((await call('deleteStudents',{all:true})).data.people.length,0);
+assert.equal(JSON.parse(globalThis.__quizTestEnv.DB.rows.get(roomA.data.id).data).history.length,0);
+// Korea calendar month boundary, legacy dates, name normalization, speed award eligibility.
+const fixture={students:{1:{id:1,name:'학생 하나',confirmed:true}},history:[{date:'2026-10-31 23:59:59',scores:{1:{score:500}}},{date:'2026-11-01 00:00:00',scores:{1:{score:1000}}}]};
+assert.equal(monthKey(Date.parse('2026-10-31T15:00:00Z')),'2026-11');
+assert.equal(monthlySummary([fixture],{},Date.parse('2026-10-31T15:00:00Z')).people[0].total,1000);
+assert.equal(monthlySummary([fixture],{},Date.parse('2026-11-30T15:00:00Z')).people[0].total,0);
+const extra={students:{2:{id:2,name:'학생하나',confirmed:true}},history:[{date:'2026-11-02 09:00:00',scores:{2:{score:2000}}}]};assert.equal(monthlySummary([fixture,extra],{},Date.parse('2026-11-04T00:00:00Z')).people[0].total,3000);
+const {speedKings}=await import(raceUrl);assert.deepEqual(speedKings([{id:1},{id:2},{id:3}],{1:{answered:3,right:3,elapsedMs:6000},2:{answered:3,right:1,elapsedMs:3000},3:{answered:2,elapsedMs:1000}},3).map(p=>p.id),[2,1]);
+console.log('PASS: cross-room same-name monthly totals, Korea month rollover, legacy records, owner isolation, individual/all resets, individual/all deletion, token revocation, rejoin, separate speed award; existing 30-player/PIN/image/mode tests');

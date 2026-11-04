@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "퀴즈런 · 함께 달리는 우리 반",
-  description: "10명 이상 함께 달리는 실시간 수업 퀴즈",
+  title: "라이온즈 퀴즈런 · 월간 홈런 리그",
+  description: "같은 이름의 월간 누적점수, 최고 스피드왕, 야구장 레이스",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

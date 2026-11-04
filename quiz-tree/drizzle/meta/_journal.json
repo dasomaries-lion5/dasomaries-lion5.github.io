@@ -15,6 +15,13 @@
       "when": 1793793360907,
       "tag": "0001_young_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793802099024,
+      "tag": "0002_daffy_cerebro",
+      "breakpoints": true
     }
   ]
 }

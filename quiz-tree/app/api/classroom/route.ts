@@ -1,16 +1,17 @@
 import {env} from 'cloudflare:workers';
 import {raceScores} from '../../../lib/race';
+import {monthlySummary,nameKey,visibleStudent,deletedAt,recordTime} from '../../../lib/monthly';
 export const dynamic='force-dynamic';
 const uid=()=>crypto.randomUUID();
 const clean=(s:any)=>String(s||'').normalize('NFKC').trim().replace(/\s+/g,' ');
 const norm=(s:any)=>clean(s).toLowerCase().replace(/[\s.,!?·]/g,'');
 const fail=(m:string,status=400)=>{throw Object.assign(new Error(m),{status});};
-function safe(c:any,host:boolean,token:string){
- const r=c.round;const me=Object.values(c.students).find((s:any)=>s.tokens.includes(token)) as any;
- const people=Object.values(c.students).map((s:any)=>({id:s.id,name:s.name,confirmed:s.confirmed,total:c.history.reduce((n:number,h:any)=>n+(h.scores[s.id]?.score||0),0)}));
+function safe(c:any,host:boolean,token:string,summary:any={people:[],month:''},state:any={}){
+ const r=c.round?{...c.round,participants:c.round.participants.filter((id:number)=>c.students[id]&&visibleStudent(c.students[id],state))}:null;const me=Object.values(c.students).find((s:any)=>s.tokens.includes(token)&&visibleStudent(s,state)) as any;
+ const people=Object.values(c.students).filter((s:any)=>visibleStudent(s,state)).map((s:any)=>({id:s.id,name:s.name,confirmed:s.confirmed,total:summary.people.find((p:any)=>p.key===nameKey(s.name))?.total||0}));
  const scores=r?raceScores(r):{};
  const q=r?.questions[r.index]; const revealed=r&&r.phase!=='question';
- return {id:c.id,title:c.title,pin:c.pin||null,people,me:me?{id:me.id,name:me.name,confirmed:me.confirmed}:null,host,quizMode:c.quizMode||'mixed',quiz:host?c.quiz:undefined,history:c.history,round:r?{id:r.id,title:r.title,phase:r.phase,index:r.index,count:r.questions.length,deadline:r.deadline,quizMode:r.quizMode||'mixed',participants:r.participants,seconds:r.seconds,scores,question:q?{type:q.type,prompt:q.prompt,options:q.options,image:q.image||null,...(revealed||host?{answer:q.answer,explanation:q.explanation}: {})}:null,myAnswer:me?r.answers[me.id]?.[r.index]:null}:null,now:Date.now()};
+ return {id:c.id,title:c.title,month:summary.month,monthlyPeople:host?summary.people:undefined,pin:c.pin||null,people,me:me?{id:me.id,name:me.name,confirmed:me.confirmed}:null,host,quizMode:c.quizMode||'mixed',quiz:host?c.quiz:undefined,history:c.history.map((h:any)=>({...h,scores:Object.fromEntries(Object.entries(h.scores).filter(([id])=>{const n=h.names?.[id]||c.students[id]?.name;return n&&recordTime(h)>deletedAt(state,n)}))})),round:r?{id:r.id,title:r.title,phase:r.phase,index:r.index,count:r.questions.length,deadline:r.deadline,quizMode:r.quizMode||'mixed',participants:r.participants,seconds:r.seconds,scores,question:q?{type:q.type,prompt:q.prompt,options:q.options,image:q.image||null,...(revealed||host?{answer:q.answer,explanation:q.explanation}: {})}:null,myAnswer:me?r.answers[me.id]?.[r.index]:null}:null,now:Date.now()};
 }
 async function handler(req:Request){
  const requestAt=Date.now();const db=(env as any).DB;const url=new URL(req.url);const token=req.headers.get('x-student-token')||'';const owner=req.headers.get('oai-authenticated-user-id');
@@ -18,7 +19,7 @@ async function handler(req:Request){
  if(action==='create'){
   if(!owner)fail('선생님 로그인 후 수업을 만들 수 있습니다.',401);
   const id=uid();const c={id,title:clean(b.title).slice(0,80)||'우리 반 퀴즈런',students:{},next:1,quiz:[],round:null,history:[]};
-  await db.prepare('INSERT INTO classrooms (id,owner,data,revision) VALUES (?,?,?,0)').bind(id,owner,JSON.stringify(c)).run();return Response.json(safe(c,true,''));
+  await db.prepare('INSERT INTO classrooms (id,owner,data,revision) VALUES (?,?,?,0)').bind(id,owner,JSON.stringify(c)).run();return Response.json(await responseData(db,c,owner!,true,''));
  }
  if(!id&&req.method==='GET'&&url.searchParams.get('mine')==='1'){if(!owner)fail('선생님 로그인 후 확인할 수 있습니다.',401);const rows=await db.prepare('SELECT id,data FROM classrooms WHERE owner=?').bind(owner).all();return Response.json({rooms:rows.results.map((row:any)=>({id:row.id,title:JSON.parse(row.data).title}))},{headers:{'Cache-Control':'no-store'}});}
  if(action==='lookupPin'){
@@ -29,15 +30,23 @@ async function handler(req:Request){
  if(!id)fail('수업 링크를 확인해 주세요.');
  for(let attempt=0;attempt<60;attempt++){
   const row=await db.prepare('SELECT * FROM classrooms WHERE id=?').bind(id).first();if(!row)fail('수업을 찾을 수 없습니다.',404);
-  const c=JSON.parse(row.data);const host=!!owner&&owner===row.owner;const student=Object.values(c.students).find((s:any)=>s.tokens.includes(token)) as any;
+  const c=JSON.parse(row.data);const stateRow=await db.prepare('SELECT * FROM teacher_state WHERE owner=?').bind(row.owner).first();const state=stateRow?JSON.parse(stateRow.data):{};const host=!!owner&&owner===row.owner;const student=Object.values(c.students).find((s:any)=>s.tokens.includes(token)&&visibleStudent(s,state)) as any;
   let changed=false;let out:any={};const r=c.round;
   if(r?.phase==='question'&&Date.now()>=r.deadline){r.phase='reveal';r.questionEnds ||= [];r.questionEnds[r.index]=r.deadline;changed=true;}
   if(req.method==='POST'){
-   if(['save','start','next','finish','invite'].includes(action)&&!host)fail('선생님만 진행할 수 있습니다.',403);
-   if(action==='invite'){c.pin=await ensurePin(db,c.id);changed=true;}else if(action==='join'){
+   if(['save','start','next','finish','invite','resetScores','deleteStudents'].includes(action)&&!host)fail('선생님만 진행할 수 있습니다.',403);
+   if(action==='resetScores'||action==='deleteStudents'){
+    if(r&&r.phase!=='finished'&&r.phase!=='lobby')fail('경기가 끝난 뒤 점수를 리셋하거나 학생을 삭제해 주세요.');
+    const target=b.all?null:clean(b.name);if(!b.all&&!target)fail('학생을 선택해 주세요.');
+    const owned=await db.prepare('SELECT id,data FROM classrooms WHERE owner=?').bind(row.owner).all();if(owned.results.some((item:any)=>{const round=JSON.parse(item.data).round;return round&&round.phase!=='finished'&&round.phase!=='lobby'}))fail('진행 중인 경기가 있습니다. 모든 경기를 마친 뒤 관리해 주세요.');
+    await updateTeacherState(db,row.owner,action,target,Date.now());
+    if(action==='deleteStudents')await purgeStudents(db,row.owner,target);
+    const fresh=await db.prepare('SELECT * FROM classrooms WHERE id=?').bind(id).first();
+    return Response.json(await responseData(db,JSON.parse(fresh.data),row.owner,host,token),{headers:{'Cache-Control':'no-store'}});
+   }else if(action==='invite'){c.pin=await ensurePin(db,c.id);changed=true;}else if(action==='join'){
     const name=clean(b.name);if(name.length<1||name.length>20)fail('이름을 1~20자로 입력해 주세요.');
-    let s=Object.values(c.students).find((s:any)=>s.name===name) as any;
-    if(!s){s={id:c.next++,name,confirmed:false,tokens:[]};c.students[s.id]=s;}
+    let s=Object.values(c.students).find((s:any)=>nameKey(s.name)===nameKey(name)&&visibleStudent(s,state)) as any;
+    if(!s){s={id:c.next++,name,confirmed:false,tokens:[],createdAt:Date.now()};c.students[s.id]=s;}
     const t=uid();s.tokens.push(t);s.tokens=s.tokens.slice(-8);out.token=t;changed=true;
    }else if(action==='confirm'){
     if(!student)fail('이름을 다시 입력해 주세요.',401);student.confirmed=true;
@@ -71,9 +80,35 @@ async function handler(req:Request){
    }else if(action!=='join'&&!['confirm','save','start','next','finish','invite'].includes(action))fail('알 수 없는 요청입니다.');
   }
   if(changed){const res=await db.prepare('UPDATE classrooms SET data=?,revision=revision+1 WHERE id=? AND revision=?').bind(JSON.stringify(c),id,row.revision).run();if(!res.meta.changes)continue;}
-  return Response.json({...safe(c,host,out.token||token),...out},{headers:{'Cache-Control':'no-store'}});
+  return Response.json({...await responseData(db,c,row.owner,host,out.token||token),...out},{headers:{'Cache-Control':'no-store'}});
  }
  fail('다른 참여자와 동기화 중입니다. 다시 시도해 주세요.',409);
+}
+async function responseData(db:any,c:any,owner:string,host:boolean,token:string){
+ const [all,stateRow]=await Promise.all([db.prepare('SELECT id,data FROM classrooms WHERE owner=?').bind(owner).all(),db.prepare('SELECT * FROM teacher_state WHERE owner=?').bind(owner).first()]);
+ const state=stateRow?JSON.parse(stateRow.data):{};const rooms=all.results.filter((r:any)=>r.id!==c.id).map((r:any)=>JSON.parse(r.data));rooms.push(c);
+ return safe(c,host,token,monthlySummary(rooms,state),state);
+}
+async function updateTeacherState(db:any,owner:string,action:string,target:string|null,at:number){
+ await db.prepare('INSERT OR IGNORE INTO teacher_state (owner,data,revision) VALUES (?, ?, 0)').bind(owner,'{}').run();
+ for(let i=0;i<60;i++){
+  const row=await db.prepare('SELECT * FROM teacher_state WHERE owner=?').bind(owner).first();const state=JSON.parse(row.data);
+  if(action==='resetScores'){if(target){state.resets ||= {};state.resets[nameKey(target)]=at;}else state.allResetAt=at;}
+  else{if(target){state.deleted ||= {};state.deleted[nameKey(target)]=at;}else state.allDeletedAt=at;}
+  const result=await db.prepare('UPDATE teacher_state SET data=?,revision=revision+1 WHERE owner=? AND revision=?').bind(JSON.stringify(state),owner,row.revision).run();if(result.meta.changes)return;
+ }
+ fail('다른 변경과 동기화 중입니다. 다시 시도해 주세요.',409);
+}
+async function purgeStudents(db:any,owner:string,target:string|null){
+ const rows=await db.prepare('SELECT id,data FROM classrooms WHERE owner=?').bind(owner).all();
+ for(const item of rows.results){for(let i=0;i<60;i++){
+  const row=await db.prepare('SELECT * FROM classrooms WHERE id=?').bind(item.id).first();const c=JSON.parse(row.data);
+  const removed=new Set(Object.values(c.students).filter((s:any)=>!target||nameKey(s.name)===nameKey(target)).map((s:any)=>String(s.id)));
+  for(const id of removed)delete c.students[id as string];
+  c.history=target?c.history.map((h:any)=>({...h,scores:Object.fromEntries(Object.entries(h.scores).filter(([id])=>!removed.has(id)&&(!target||nameKey(h.names?.[id])!==nameKey(target)))),names:Object.fromEntries(Object.entries(h.names||{}).filter(([id])=>!removed.has(id)))})):[];
+  if(c.round){c.round.participants=c.round.participants.filter((id:number)=>!removed.has(String(id)));for(const id of removed)delete c.round.answers[id as string];}
+  const done=await db.prepare('UPDATE classrooms SET data=?,revision=revision+1 WHERE id=? AND revision=?').bind(JSON.stringify(c),c.id,row.revision).run();if(done.meta.changes)break;if(i===59)fail('일부 학생 삭제를 마치지 못했습니다. 다시 시도해 주세요.',409);
+ }}
 }
 function validateImage(image:any,id:string){
  if(!image)return null;
@@ -94,7 +129,7 @@ function complete(c:any){
  if(r.phase==='question')r.questionEnds[r.index]=Math.min(r.deadline,r.finishedAt);
  r.phase='finished';const scores:any=raceScores(r,r.finishedAt);
  Object.values(scores).forEach((s:any)=>s.total=r.questions.length);
- c.history.push({id:r.id,title:r.title,date:new Date().toLocaleString('sv-SE',{timeZone:'Asia/Seoul'}),scores});
+ c.history.push({id:r.id,title:r.title,at:r.finishedAt,names:Object.fromEntries(r.participants.map((id:number)=>[id,c.students[id]?.name])),date:new Date().toLocaleString('sv-SE',{timeZone:'Asia/Seoul'}),scores});
 }
 export async function GET(req:Request){try{return await handler(req)}catch(e:any){return Response.json({error:e.message},{status:e.status||500})}}
 export async function POST(req:Request){try{if(req.headers.get('origin')!==new URL(req.url).origin)return Response.json({error:'요청 출처를 확인해 주세요.'},{status:403});return await handler(req)}catch(e:any){return Response.json({error:e.message},{status:e.status||500})}}

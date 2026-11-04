@@ -25,3 +25,4 @@ export function raceDistance(score:any,count:number,seconds:number){
  const speed=right&&score?.elapsedMs!=null?Math.max(0,Math.min(1,1-score.elapsedMs/(Math.max(1,count)*seconds*1000))):0;
  return Math.min(100,(right+speed*.7)/(Math.max(1,count)+.7)*100);
 }
+export function speedKings(people:any[],scores:any,count:number){return people.filter(p=>scores[p.id]?.answered>=count&&scores[p.id]?.elapsedMs!=null).slice().sort((a,b)=>scores[a.id].elapsedMs-scores[b.id].elapsedMs);}

@@ -1,0 +1,1 @@
+export default function LionAvatar({number=1,className=''}:{number?:number;className?:string}){return <span className={'lion-avatar '+className}><img src="/assets/lions-runner.webp" alt="삼성 라이온즈 유니폼을 입은 사자 캐릭터"/><b>{number}</b></span>}
