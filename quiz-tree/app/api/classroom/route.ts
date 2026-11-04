@@ -10,7 +10,7 @@ function safe(c:any,host:boolean,token:string){
  const people=Object.values(c.students).map((s:any)=>({id:s.id,name:s.name,confirmed:s.confirmed,total:c.history.reduce((n:number,h:any)=>n+(h.scores[s.id]?.score||0),0)}));
  const scores=r?raceScores(r):{};
  const q=r?.questions[r.index]; const revealed=r&&r.phase!=='question';
- return {id:c.id,title:c.title,people,me:me?{id:me.id,name:me.name,confirmed:me.confirmed}:null,host,quiz:host?c.quiz:undefined,history:c.history,round:r?{id:r.id,title:r.title,phase:r.phase,index:r.index,count:r.questions.length,deadline:r.deadline,participants:r.participants,seconds:r.seconds,scores,question:q?{type:q.type,prompt:q.prompt,options:q.options,...(revealed||host?{answer:q.answer,explanation:q.explanation}: {})}:null,myAnswer:me?r.answers[me.id]?.[r.index]:null}:null,now:Date.now()};
+ return {id:c.id,title:c.title,people,me:me?{id:me.id,name:me.name,confirmed:me.confirmed}:null,host,quizMode:c.quizMode||'mixed',quiz:host?c.quiz:undefined,history:c.history,round:r?{id:r.id,title:r.title,phase:r.phase,index:r.index,count:r.questions.length,deadline:r.deadline,quizMode:r.quizMode||'mixed',participants:r.participants,seconds:r.seconds,scores,question:q?{type:q.type,prompt:q.prompt,options:q.options,...(revealed||host?{answer:q.answer,explanation:q.explanation}: {})}:null,myAnswer:me?r.answers[me.id]?.[r.index]:null}:null,now:Date.now()};
 }
 async function handler(req:Request){
  const requestAt=Date.now();const db=(env as any).DB;const url=new URL(req.url);const token=req.headers.get('x-student-token')||'';const owner=req.headers.get('oai-authenticated-user-id');
@@ -43,10 +43,13 @@ async function handler(req:Request){
    }else if(action==='save'){
     if(r&&r.phase!=='finished'&&r.phase!=='lobby')fail('게임 종료 후 문제를 수정해 주세요.');
     const qs=b.questions;if(!Array.isArray(qs)||!qs.length||qs.length>50)fail('문제는 1~50개로 설정해 주세요.');
-    c.quiz=qs.map((q:any)=>{if(!['초성','O/X','객관식','주관식'].includes(q.type)||!clean(q.prompt)||!clean(q.answer))fail('문제와 정답을 모두 입력해 주세요.');const options=Array.isArray(q.options)?q.options.map(clean).slice(0,4):[];if(['O/X','객관식'].includes(q.type)&&(!options.includes(clean(q.answer))||options.length<2))fail('선택지에 정답을 포함해 주세요.');return {type:q.type,prompt:clean(q.prompt).slice(0,1000),answer:clean(q.answer).slice(0,200),options,explanation:clean(q.explanation).slice(0,1000)}});changed=true;
+    const quizMode=b.quizMode==='initial'?'initial':'mixed';
+    if(quizMode==='initial'&&qs.some((q:any)=>q.type!=='초성'))fail('초성퀴즈만 모드에서는 초성 문제만 저장할 수 있습니다.');
+    c.quizMode=quizMode;
+    c.quiz=qs.map((q:any)=>{if(!['초성','O/X','객관식','주관식'].includes(q.type)||!clean(q.prompt)||!clean(q.answer))fail('문제와 정답을 모두 입력해 주세요.');const options=Array.isArray(q.options)?q.options.map(clean).slice(0,4):[];if(['O/X','객관식'].includes(q.type)&&(!options.includes(clean(q.answer))||options.length<2))fail('선택지에 정답을 포함해 주세요.');return {type:q.type,prompt:clean(q.prompt).slice(0,1000),answer:clean(q.answer).slice(0,200),options,explanation:clean(q.explanation).slice(0,1000)}});if(r?.phase==='lobby'){r.questions=c.quiz;r.quizMode=quizMode;}changed=true;
    }else if(action==='start'){
     if(r&&r.phase!=='finished')fail('진행 중인 게임을 먼저 끝내 주세요.');if(!c.quiz.length)fail('먼저 문제를 준비해 주세요.');
-    c.round={id:uid(),title:clean(b.title)||'오늘의 도전',questions:c.quiz,index:0,phase:'lobby',deadline:0,seconds:Math.max(10,Math.min(180,Number(b.seconds)||30)),participants:[],answers:{},questionStarts:[],questionEnds:[]};changed=true;
+    c.round={id:uid(),title:clean(b.title)||'오늘의 도전',questions:c.quiz,quizMode:c.quizMode||'mixed',index:0,phase:'lobby',deadline:0,seconds:Math.max(10,Math.min(180,Number(b.seconds)||30)),participants:[],answers:{},questionStarts:[],questionEnds:[]};changed=true;
    }else if(action==='next'){
     if(!r||r.phase==='finished')fail('대기실을 먼저 열어 주세요.');
     if(r.phase==='question'){r.phase='reveal';r.questionEnds ||= [];r.questionEnds[r.index]=Date.now();}else{if(!r.participants.length)fail('학생 참여를 기다려 주세요.');if(r.phase==='reveal')r.index++;if(r.index>=r.questions.length){complete(c);}else{r.phase='question';r.questionStarts ||= [];r.questionStarts[r.index]=Date.now();r.deadline=r.questionStarts[r.index]+r.seconds*1000;}}changed=true;

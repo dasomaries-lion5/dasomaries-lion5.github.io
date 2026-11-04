@@ -64,4 +64,20 @@ const measured=raceScores({participants:[1,2,3],seconds:30,questionStarts:[1000,
 assert.equal(measured[1].elapsedMs,3000);assert.equal(measured[2].elapsedMs,6000);assert.equal(measured[3].elapsedMs,7000);
 assert.equal(finished.data.history[0].scores[sid].elapsedMs,finished.data.round.scores[sid].elapsedMs);
 assert.equal(f2.data.round.participants.length,1,'Small-group rehearsal remains possible; 10 is supported capacity, not a start gate');
-console.log('PASS: 30 concurrent registrations, unique IDs, all 30 admitted and submitting, same-name rejoin, owner authorization, hidden answers, duplicate/late rejection, cumulative history, measured timings, accuracy-first speed ranking and ties, small-group rehearsal, origin check');
+// Both source-based generation modes and server-side initial-only enforcement.
+const questionCode=ts.transpile(fs.readFileSync('lib/questions.ts','utf8'),{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.ESNext});
+const {generateQuestions,initials}=await import('data:text/javascript;base64,'+Buffer.from(questionCode).toString('base64'));
+const source='컴퓨터는 입력받은 명령을 순서대로 실행하는 장치입니다.\n알고리즘은 문제를 해결하기 위한 순서와 절차입니다.\n인공지능은 사람이 하는 판단을 컴퓨터로 구현하는 기술입니다.\n개인정보는 개인을 알아볼 수 있는 소중한 정보입니다.';
+const mixed=generateQuestions(source,4,'mixed'),initialOnly=generateQuestions(source,4,'initial');
+assert.deepEqual(mixed.questions.map(q=>q.type),['초성','O/X','객관식','주관식']);
+assert.equal(initialOnly.questions.length,4);assert(initialOnly.questions.every(q=>q.type==='초성'&&q.options.length===0&&q.prompt.includes('초성 힌트: '+initials(q.answer))));
+assert.equal(generateQuestions('An English sentence contains enough words for testing.',4,'initial').questions.length,0);
+assert.equal(initials('인공지능'),'ㅇㄱㅈㄴ');
+const modeRoom=await call('create');id=modeRoom.data.id;
+assert.equal(modeRoom.data.quizMode,'mixed');
+assert.equal((await call('save',{questions,quizMode:'initial'})).status,400);
+const initialSaved=await call('save',{questions:initialOnly.questions,quizMode:'initial'});
+assert.equal(initialSaved.status,200);assert.equal(initialSaved.data.quizMode,'initial');
+const initialRound=await call('start');assert.equal(initialRound.data.round.quizMode,'initial');
+const mixedSaved=await call('save',{questions:mixed.questions,quizMode:'mixed'});assert.equal(mixedSaved.data.quizMode,'mixed');assert.equal(mixedSaved.data.round.quizMode,'mixed');assert.equal(mixedSaved.data.round.count,4);
+console.log('PASS: mixed and initial-only generation, Korean initials, initial-only server validation, mode persistence and round snapshot; existing 30-player race and score tests');
