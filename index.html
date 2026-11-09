@@ -170,6 +170,650 @@
     .halo { fill-opacity: 0; }
     .pen { opacity: 0; }
     .armR { transform-box: view-box; transform-origin: 252px 224px; }
+    .glow { transform-box: fill-box; transform-origin: center; transform: scale(0); opacity: 0; }
+    .orbit { opacity: 0; transform-box: fill-box; transform-origin: center; }
+
+    .skip-btn {
+      position: fixed; right: 20px; bottom: 20px; z-index: 13;
+      padding: 8px 16px; border-radius: 999px; font: inherit; font-size: 15px; color: var(--ink);
+      background: rgb(255 255 255 / 0.6); border: 1px dashed rgb(61 49 38 / 0.35); cursor: pointer;
+    }
+    .skip-btn:hover { border-color: var(--accent-dark); color: var(--accent-dark); }
+
+    @property --r { syntax: '<length>'; inherits: true; initial-value: 0px; }
+    @property --m { syntax: '<percentage>'; inherits: false; initial-value: 100%; }
+
+    @media (prefers-reduced-motion: no-preference) {
+      :root {
+        --out: cubic-bezier(.22, 1, .36, 1);
+        --inout: cubic-bezier(.65, 0, .35, 1);
+        --spring: cubic-bezier(.34, 1.45, .64, 1);
+        /* 타임라인 기준점 (JS의 T 값과 맞춰져 있어요) */
+        --reveal-at: 4s;
+        --page-at: 4.1s;
+      }
+
+      /* ── 1막: 종이 울리고 제목이 떠오름 (0 ~ 2.6s) ── */
+      .intro { animation: introIn .4s ease both, introOut .75s cubic-bezier(.4, 0, .2, 1) 1.9s forwards; }
+      .dust { animation-duration: 7s; }
+      .intro-bell path { animation: draw .75s var(--out) .15s both; }
+      .intro-bell { animation: bellDrop .7s var(--spring) .1s both, swing 1.7s ease-in-out .7s forwards; }
+      .intro-bell circle { animation: fadeIn .3s ease .7s forwards; }
+      .ring { animation: ringWave 1.5s var(--out) both; }
+      .ring:nth-child(1) { animation-delay: .85s; }
+      .ring:nth-child(2) { animation-delay: 1.05s; }
+      .ring:nth-child(3) { animation-delay: 1.25s; }
+      .intro-title .ch { animation: charIn .75s var(--spring) both; animation-delay: calc(.95s + var(--i) * .055s); }
+      .intro-sub { animation: rise .8s var(--out) 1.4s forwards; }
+      .flash { display: none; }
+
+      /* ── 2막: 선생님이 그려지고 손을 흔듦 ── */
+      .halo { animation: haloIn .9s var(--out) 2.4s forwards; transform-box: fill-box; transform-origin: center; }
+      .teacher.move { animation: moveToCorner .95s cubic-bezier(.65, 0, .25, 1) forwards; }
+      .armR.wave { animation: armWave 1.1s ease-in-out both; }
+      .teacher.magic .orbit { animation: orbitBurst 1s var(--out) forwards; }
+      .teacher.magic .glow { animation: glowPulse .9s var(--out) forwards; }
+      .skip-btn { animation: rise .6s var(--out) .2s both, hideBtn .4s ease 6.4s forwards; }
+
+      /* ── 3막: 선생님 손끝에서 교실이 번지며 나타남 ── */
+      .board { animation: boardIn 1s var(--out) var(--page-at) backwards; }
+      .date { animation: rise .8s var(--out) calc(var(--page-at) + .25s) backwards; }
+      .bell { transform-origin: 50% 8%; animation: bellIn 1.3s ease-in-out calc(var(--page-at) + .3s) backwards; }
+      h1 {
+        -webkit-mask-image: linear-gradient(90deg, #000 var(--m), transparent calc(var(--m) + 14%));
+        mask-image: linear-gradient(90deg, #000 var(--m), transparent calc(var(--m) + 14%));
+        animation: titleWipe 1.1s cubic-bezier(.3, .1, .2, 1) calc(var(--page-at) + .45s) backwards;
+      }
+      .underline path { animation: drawLine .9s var(--out) calc(var(--page-at) + 1s) forwards; }
+      .tagline { animation: rise .8s var(--out) calc(var(--page-at) + .95s) backwards; }
+      .subject:nth-child(1) { animation: pin .9s var(--out) calc(var(--page-at) + 1.05s) backwards; }
+      .subject:nth-child(2) { animation: pin .9s var(--out) calc(var(--page-at) + 1.17s) backwards; }
+      .notice { animation: rise .8s var(--out) calc(var(--page-at) + 1.3s) backwards; }
+      footer { animation: rise .8s var(--out) calc(var(--page-at) + 1.42s) backwards; }
+
+      @keyframes introIn { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes introOut {
+        from { opacity: 1; transform: none; visibility: visible; }
+        99% { visibility: visible; }
+        to { opacity: 0; transform: scale(1.06); visibility: hidden; }
+      }
+      @keyframes float { 0%, 100% { transform: translate(0, 0); opacity: .2; } 50% { transform: translate(14px, -22px); opacity: .7; } }
+      @keyframes draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+      @keyframes bellDrop { from { opacity: 0; transform: translateY(-14px) scale(.85); } to { opacity: 1; transform: none; } }
+      @keyframes swing {
+        0% { transform: rotate(0); } 12% { transform: rotate(-22deg); } 30% { transform: rotate(17deg); }
+        46% { transform: rotate(-11deg); } 60% { transform: rotate(7deg); } 74% { transform: rotate(-4deg); }
+        87% { transform: rotate(2deg); } 100% { transform: rotate(0); }
+      }
+      @keyframes ringWave { 0% { transform: scale(.6); opacity: .8; } 100% { transform: scale(2.6); opacity: 0; } }
+      @keyframes charIn {
+        from { opacity: 0; filter: blur(5px); transform: translateY(16px) scale(.92); }
+        to { opacity: 1; filter: blur(0); transform: none; }
+      }
+      @keyframes boardIn { from { opacity: 0; transform: translateY(28px) scale(.975); } to { opacity: 1; transform: none; } }
+      @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+      @keyframes bellIn {
+        0% { opacity: 0; transform: scale(.5) rotate(0); }
+        25% { opacity: 1; transform: scale(1.06) rotate(-16deg); }
+        45% { transform: scale(1) rotate(11deg); }
+        62% { transform: rotate(-6deg); }
+        80% { transform: rotate(3deg); }
+        100% { opacity: 1; transform: none; }
+      }
+      @keyframes titleWipe {
+        from { --m: -14%; opacity: 0; transform: translateY(10px); }
+        15% { opacity: 1; }
+        to { --m: 100%; opacity: 1; transform: none; }
+      }
+      @keyframes drawLine { to { stroke-dashoffset: 0; } }
+      @keyframes pin {
+        from { opacity: 0; transform: translateY(22px) rotate(-3deg) scale(.96); }
+        to { opacity: 1; transform: none; }
+      }
+    }
+    @keyframes fillIn { to { fill-opacity: 1; } }
+    @keyframes haloIn { from { fill-opacity: 0; transform: scale(.6); } to { fill-opacity: .28; transform: none; } }
+    @keyframes fadeIn { to { opacity: 1; } }
+    @keyframes hideBtn { to { opacity: 0; visibility: hidden; } }
+    @keyframes moveToCorner {
+      from { transform: translate(-50%, -50%) scale(1); }
+      to { transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, 0px))) scale(var(--ds, .5)); }
+    }
+    @keyframes armWave {
+      0% { transform: rotate(0); } 18% { transform: rotate(-14deg); } 36% { transform: rotate(6deg); }
+      54% { transform: rotate(-11deg); } 72% { transform: rotate(4deg); } 100% { transform: rotate(0); }
+    }
+    @keyframes orbitBurst {
+      0% { opacity: 0; transform: rotate(0) scale(.3); }
+      25% { opacity: 1; }
+      100% { opacity: 0; transform: rotate(220deg) scale(1.7); }
+    }
+    @keyframes glowPulse {
+      0% { opacity: 1; transform: scale(0); }
+      35% { opacity: 1; transform: scale(1.5); }
+      100% { opacity: 0; transform: scale(2.6); }
+    }
+
+    .skip .intro, .skip .intro2, .skip .tiles, .skip .spread, .skip .teacher, .skip .skip-btn { display: none !important; }
+    .skip *, .skip *::before, .skip *::after { animation: none !important; }
+    .skip .underline path { stroke-dashoffset: 0; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .intro, .intro2, .tiles, .spread, .teacher, .skip-btn { display: none; }
+      .underline path { stroke-dashoffset: 0; }
+    }
+
+
+    button.subject { font: inherit; color: inherit; background: #fffdf7; width: 100%; text-align: center; cursor: pointer; }
+    .profile {
+      display: flex; align-items: center; gap: 18px;
+      max-width: 640px; margin: -10px auto 30px; padding: 18px 22px;
+      background: #fffdf7; border: 2px solid rgb(61 49 38 / 0.12); border-radius: 14px; text-align: left;
+    }
+    .profile[hidden] { display: none; }
+    .profile .avatar {
+      flex: 0 0 72px; height: 72px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--sky); color: var(--ink); font-size: 32px; font-weight: 700;
+    }
+    .profile .avatar { overflow: hidden; }
+    .profile .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .ptags span {
+      display: inline-block; margin: 0 6px 6px 0; padding: 2px 10px; border-radius: 999px;
+      font-size: 14px; background: var(--paper); border: 1px solid rgb(61 49 38 / 0.15);
+    }
+    .pname { font-size: 22px; font-weight: 700; }
+    .pname span {
+      display: inline-block; margin-left: 6px; padding: 2px 10px; border-radius: 999px;
+      font-size: 14px; background: var(--accent);
+    }
+    .pbio { margin: 4px 0 8px; font-size: 17px; color: var(--ink-dim); }
+    .plink { font-size: 16px; color: var(--coral-dark); }
+    @media (max-width: 560px) {
+      .board { padding: 34px 20px 28px 44px; }
+      .board::before { left: 30px; }
+      .timetable { grid-template-columns: 1fr; }
+      .tagline { font-size: 19px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="intro" id="intro" aria-hidden="true">
+    <div class="stage1">
+      <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+      <svg class="intro-bell" viewBox="0 0 64 64" aria-hidden="true">
+        <path pathLength="1" d="M32 6v4"/>
+        <path pathLength="1" d="M14 46c0-12 4-22 18-22s18 10 18 22l4 6H10z"/>
+        <path pathLength="1" d="M26 56a6 6 0 0 0 12 0"/>
+        <circle cx="32" cy="8" r="2"/>
+      </svg>
+    </div>
+    <div class="intro-title" id="introTitle">수업 시작</div>
+    <div class="intro-sub">자리에 앉아 주세요</div>
+    
+  </div>
+
+  <div class="intro2" id="intro2" aria-hidden="true"></div>
+    <svg class="teacher" id="teacher" viewBox="0 0 400 500" aria-hidden="true">
+  <defs><filter id="pencil" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.2" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+  <circle class="halo" cx="200" cy="280" r="178" fill="#f2b33d"/>
+  <g id="figure" filter="url(#pencil)">
+    <path class="ln" style="--d:5.6s" d="M156 112 C150 70 172 48 202 48 C234 48 256 70 248 112 C252 150 258 196 256 236 C248 262 232 268 224 250 C222 246 220 240 220 236 L180 236 C180 240 178 246 176 250 C168 268 152 262 146 236 C144 196 152 150 156 112 Z"/><path class="c" fill="#3a2b22" d="M156 112 C150 70 172 48 202 48 C234 48 256 70 248 112 C252 150 258 196 256 236 C248 262 232 268 224 250 C222 246 220 240 220 236 L180 236 C180 240 178 246 176 250 C168 268 152 262 146 236 C144 196 152 150 156 112 Z"/>
+    <path class="ln" style="--d:5.7s" d="M188 166 L188 200 Q200 208 212 200 L212 166 Z"/><path class="c" fill="#f3c9a6" d="M188 166 L188 200 Q200 208 212 200 L212 166 Z"/>
+    <path class="ln" style="--d:5.8s" d="M186 196 C166 200 150 206 146 220 C142 250 150 290 158 320 C190 326 214 326 244 320 C252 290 260 250 254 220 C250 206 234 200 214 196 C206 210 194 210 186 196 Z"/><path class="c" fill="#e27f66" d="M186 196 C166 200 150 206 146 220 C142 250 150 290 158 320 C190 326 214 326 244 320 C252 290 260 250 254 220 C250 206 234 200 214 196 C206 210 194 210 186 196 Z"/>
+    <path class="c" fill="#c9654d" d="M236 214 C250 222 256 246 258 280 C250 300 246 316 244 320 C250 292 250 256 236 226 Z"/>
+    <path class="ln" style="--d:5.9s" d="M156 314 C186 324 216 324 246 314 C256 350 268 400 276 446 C230 462 176 462 124 446 C132 400 146 350 156 314 Z"/><path class="c" fill="#56698a" d="M156 314 C186 324 216 324 246 314 C256 350 268 400 276 446 C230 462 176 462 124 446 C132 400 146 350 156 314 Z"/>
+    <path class="c" fill="#44577a" d="M246 314 C256 350 268 400 276 446 C262 449 252 446 246 432 C240 396 236 350 232 322 Z"/>
+    <path class="ln" style="--d:6s" d="M176 332 C172 372 170 410 166 440 M206 332 C204 372 206 410 212 440"/>
+    <path class="ln" style="--d:6.1s" d="M167.7 431.3 Q163.0 435.5 162.8 454.6 Q162.5 473.6 166.1 477.5 Q169.6 481.5 173.5 477.9 Q177.5 474.4 179.2 455.4 Q181.0 436.5 176.7 431.7 Q172.5 427.0 167.7 431.3 Z"/><path class="c" fill="#f3c9a6" d="M167.7 431.3 Q163.0 435.5 162.8 454.6 Q162.5 473.6 166.1 477.5 Q169.6 481.5 173.5 477.9 Q177.5 474.4 179.2 455.4 Q181.0 436.5 176.7 431.7 Q172.5 427.0 167.7 431.3 Z"/>
+    <path class="ln" style="--d:6.1s" d="M223.3 431.7 Q219.0 436.5 220.8 455.4 Q222.5 474.4 226.5 477.9 Q230.4 481.5 233.9 477.5 Q237.5 473.6 237.2 454.6 Q237.0 435.5 232.3 431.3 Q227.5 427.0 223.3 431.7 Z"/><path class="c" fill="#f3c9a6" d="M223.3 431.7 Q219.0 436.5 220.8 455.4 Q222.5 474.4 226.5 477.9 Q230.4 481.5 233.9 477.5 Q237.5 473.6 237.2 454.6 Q237.0 435.5 232.3 431.3 Q227.5 427.0 223.3 431.7 Z"/>
+    <path class="ln" style="--d:6.2s" d="M155.0 485.0 Q158.0 488.0 171.0 488.5 Q184.0 489.0 187.5 485.5 Q191.0 482.0 187.5 478.5 Q184.0 475.0 171.0 475.5 Q158.0 476.0 155.0 479.0 Q152.0 482.0 155.0 485.0 Z"/><path class="c" fill="#3a2b22" d="M155.0 485.0 Q158.0 488.0 171.0 488.5 Q184.0 489.0 187.5 485.5 Q191.0 482.0 187.5 478.5 Q184.0 475.0 171.0 475.5 Q158.0 476.0 155.0 479.0 Q152.0 482.0 155.0 485.0 Z"/>
+    <path class="ln" style="--d:6.2s" d="M213.0 485.0 Q216.0 488.0 229.0 488.5 Q242.0 489.0 245.5 485.5 Q249.0 482.0 245.5 478.5 Q242.0 475.0 229.0 475.5 Q216.0 476.0 213.0 479.0 Q210.0 482.0 213.0 485.0 Z"/><path class="c" fill="#3a2b22" d="M213.0 485.0 Q216.0 488.0 229.0 488.5 Q242.0 489.0 245.5 485.5 Q249.0 482.0 245.5 478.5 Q242.0 475.0 229.0 475.5 Q216.0 476.0 213.0 479.0 Q210.0 482.0 213.0 485.0 Z"/>
+    <path class="ln" style="--d:6.3s" d="M154 124 a46 52 0 1 0 92 0 a46 52 0 1 0 -92 0 Z"/><path class="c" fill="#f3c9a6" d="M154 124 a46 52 0 1 0 92 0 a46 52 0 1 0 -92 0 Z"/>
+    
+    
+    <path class="ln" style="--d:6.5s" d="M148.5 146 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z"/><path class="c" fill="#f2b33d" d="M148.5 146 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z"/>
+    <path class="ln" style="--d:6.5s" d="M244.5 146 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z"/><path class="c" fill="#f2b33d" d="M244.5 146 a3.5 3.5 0 1 0 7 0 a3.5 3.5 0 1 0 -7 0 Z"/>
+    <path class="ln" style="--d:6.6s" d="M156 116 C158 92 176 76 200 76 C226 76 244 92 246 116 C234 100 218 94 200 98 C182 94 166 102 156 116 Z"/><path class="c" fill="#3a2b22" d="M156 116 C158 92 176 76 200 76 C226 76 244 92 246 116 C234 100 218 94 200 98 C182 94 166 102 156 116 Z"/>
+    <path class="c" fill="#241a14" d="M168 98 C184 84 216 84 232 96 C214 90 190 92 168 98 Z"/>
+    <path class="c" fill="#3a2b22" d="M168 128 Q180 118 192 127 Q180 134 168 128 Z"/>
+    <path class="c" fill="#3a2b22" d="M208 127 Q220 118 232 128 Q220 134 208 127 Z"/>
+    <path class="ln" style="--d:6.8s" d="M166 112 Q180 104 194 110 M206 110 Q220 104 234 112"/>
+    <path class="ln" style="--d:6.9s" d="M200 132 Q196 143 202 146"/>
+    <path class="c" fill="#d9707a" d="M186 158 Q193 153 200 155 Q207 153 214 158 Q200 168 186 158 Z"/>
+    <path class="c" fill="#f0a08a" d="M163 146 a7 5 0 1 0 14 0 a7 5 0 1 0 -14 0 Z"/>
+    <path class="c" fill="#f0a08a" d="M223 146 a7 5 0 1 0 14 0 a7 5 0 1 0 -14 0 Z"/>
+    <path class="ln" style="--d:7s" d="M116 302 Q166 290 214 298 L212 338 Q166 330 118 342 Z"/><path class="c" fill="#7fb8d6" d="M116 302 Q166 290 214 298 L212 338 Q166 330 118 342 Z"/>
+    <path class="ln" style="--d:7.1s" d="M120 318 Q166 310 210 318"/>
+    <path class="ln" style="--d:7.2s" d="M145.9 211.8 Q137.7 215.9 131.4 237.9 Q125.2 259.8 125.2 280.9 Q125.2 302.0 134.3 315.2 Q143.3 328.4 148.9 329.5 Q154.4 330.7 155.5 325.1 Q156.7 319.6 149.7 308.8 Q142.8 298.0 144.8 281.1 Q146.8 264.2 154.6 244.1 Q162.3 224.1 158.2 215.9 Q154.1 207.7 145.9 211.8 Z"/><path class="c" fill="#e27f66" d="M145.9 211.8 Q137.7 215.9 131.4 237.9 Q125.2 259.8 125.2 280.9 Q125.2 302.0 134.3 315.2 Q143.3 328.4 148.9 329.5 Q154.4 330.7 155.5 325.1 Q156.7 319.6 149.7 308.8 Q142.8 298.0 144.8 281.1 Q146.8 264.2 154.6 244.1 Q162.3 224.1 158.2 215.9 Q154.1 207.7 145.9 211.8 Z"/>
+    <path class="ln" style="--d:7.3s" d="M140 332 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0 Z"/><path class="c" fill="#f3c9a6" d="M140 332 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0 Z"/>
+    <g class="armR" id="armR">
+      <path class="ln" style="--d:7.4s" d="M252.7 233.2 Q261.9 232.5 279.5 210.3 Q297.2 188.0 304.2 169.9 Q311.2 151.8 308.5 145.3 Q305.8 138.8 299.3 141.5 Q292.8 144.2 285.8 160.1 Q278.8 176.0 260.5 195.7 Q242.1 215.5 242.8 224.7 Q243.5 233.9 252.7 233.2 Z"/><path class="c" fill="#e27f66" d="M252.7 233.2 Q261.9 232.5 279.5 210.3 Q297.2 188.0 304.2 169.9 Q311.2 151.8 308.5 145.3 Q305.8 138.8 299.3 141.5 Q292.8 144.2 285.8 160.1 Q278.8 176.0 260.5 195.7 Q242.1 215.5 242.8 224.7 Q243.5 233.9 252.7 233.2 Z"/>
+      <path class="ln" style="--d:7.5s" d="M303.9 154.8 Q310.7 152.9 318.8 136.4 Q327.0 119.9 325.4 114.5 Q323.9 109.0 318.5 110.6 Q313.0 112.1 303.2 127.6 Q293.3 143.1 295.2 149.9 Q297.1 156.7 303.9 154.8 Z"/><path class="c" fill="#f3c9a6" d="M303.9 154.8 Q310.7 152.9 318.8 136.4 Q327.0 119.9 325.4 114.5 Q323.9 109.0 318.5 110.6 Q313.0 112.1 303.2 127.6 Q293.3 143.1 295.2 149.9 Q297.1 156.7 303.9 154.8 Z"/>
+      
+      
+      
+      <path class="ln" style="--d:7.68s" d="M343.4 83.7 Q346.9 82.0 349.2 73.9 Q351.5 65.8 353.9 58.7 Q356.2 51.6 355.1 49.0 Q354.0 46.3 351.4 47.4 Q348.8 48.6 345.5 55.5 Q342.1 62.4 339.3 70.5 Q336.4 78.6 338.2 82.1 Q339.9 85.5 343.4 83.7 Z"/><path class="c" fill="#f3c9a6" d="M343.4 83.7 Q346.9 82.0 349.2 73.9 Q351.5 65.8 353.9 58.7 Q356.2 51.6 355.1 49.0 Q354.0 46.3 351.4 47.4 Q348.8 48.6 345.5 55.5 Q342.1 62.4 339.3 70.5 Q336.4 78.6 338.2 82.1 Q339.9 85.5 343.4 83.7 Z"/>
+      <path class="ln" style="--d:7.72s" d="M321.2 113.2 Q306.0 110.3 307.0 100.3 Q308.1 90.2 312.3 82.0 Q316.4 73.8 322.5 70.2 Q328.6 66.6 334.4 68.1 Q340.2 69.6 342.9 75.4 Q345.5 81.3 344.0 91.2 Q342.4 101.1 339.5 108.6 Q336.5 116.1 321.2 113.2 Z"/><path class="c" fill="#f3c9a6" d="M321.2 113.2 Q306.0 110.3 307.0 100.3 Q308.1 90.2 312.3 82.0 Q316.4 73.8 322.5 70.2 Q328.6 66.6 334.4 68.1 Q340.2 69.6 342.9 75.4 Q345.5 81.3 344.0 91.2 Q342.4 101.1 339.5 108.6 Q336.5 116.1 321.2 113.2 Z"/>
+      <path class="ln" style="--d:7.75s" d="M317.7 100.9 Q325.5 94.7 329.3 103.9"/>
+      <path class="ln" style="--d:7.56s" d="M319.6 81.4 Q322.8 79.2 323.5 75.4 Q324.2 71.7 324.9 69.0 Q325.6 66.2 324.1 63.1 Q322.5 59.9 319.3 61.4 Q316.2 63.0 314.9 65.9 Q313.6 68.9 312.8 73.0 Q312.0 77.1 314.2 80.3 Q316.3 83.6 319.6 81.4 Z"/><path class="c" fill="#f3c9a6" d="M319.6 81.4 Q322.8 79.2 323.5 75.4 Q324.2 71.7 324.9 69.0 Q325.6 66.2 324.1 63.1 Q322.5 59.9 319.3 61.4 Q316.2 63.0 314.9 65.9 Q313.6 68.9 312.8 73.0 Q312.0 77.1 314.2 80.3 Q316.3 83.6 319.6 81.4 Z"/><path class="ln" style="--d:7.6s" d="M328.4 79.9 Q332.0 77.6 332.7 74.3 Q333.5 71.0 334.1 68.1 Q334.7 65.2 332.8 61.8 Q330.9 58.4 327.5 60.3 Q324.1 62.1 323.0 65.0 Q321.9 68.0 321.1 71.4 Q320.3 74.9 322.5 78.5 Q324.8 82.1 328.4 79.9 Z"/><path class="c" fill="#f3c9a6" d="M328.4 79.9 Q332.0 77.6 332.7 74.3 Q333.5 71.0 334.1 68.1 Q334.7 65.2 332.8 61.8 Q330.9 58.4 327.5 60.3 Q324.1 62.1 323.0 65.0 Q321.9 68.0 321.1 71.4 Q320.3 74.9 322.5 78.5 Q324.8 82.1 328.4 79.9 Z"/><path class="ln" style="--d:7.64s" d="M336.4 80.1 Q340.1 78.0 341.1 74.7 Q342.1 71.3 342.7 68.4 Q343.3 65.4 341.4 62.0 Q339.6 58.6 336.1 60.4 Q332.7 62.3 331.6 65.1 Q330.6 67.9 329.6 71.3 Q328.6 74.7 330.7 78.4 Q332.7 82.1 336.4 80.1 Z"/><path class="c" fill="#f3c9a6" d="M336.4 80.1 Q340.1 78.0 341.1 74.7 Q342.1 71.3 342.7 68.4 Q343.3 65.4 341.4 62.0 Q339.6 58.6 336.1 60.4 Q332.7 62.3 331.6 65.1 Q330.6 67.9 329.6 71.3 Q328.6 74.7 330.7 78.4 Q332.7 82.1 336.4 80.1 Z"/>
+      <path class="ln" style="--d:7.8s" d="M336.4 106.7 Q341.0 108.4 348.4 104.3 Q355.7 100.3 361.2 93.6 Q366.6 87.0 366.6 83.8 Q366.6 80.6 363.4 80.7 Q360.2 80.7 354.4 85.6 Q348.7 90.5 341.9 93.1 Q335.1 95.7 333.4 100.4 Q331.7 105.1 336.4 106.7 Z"/><path class="c" fill="#f3c9a6" d="M336.4 106.7 Q341.0 108.4 348.4 104.3 Q355.7 100.3 361.2 93.6 Q366.6 87.0 366.6 83.8 Q366.6 80.6 363.4 80.7 Q360.2 80.7 354.4 85.6 Q348.7 90.5 341.9 93.1 Q335.1 95.7 333.4 100.4 Q331.7 105.1 336.4 106.7 Z"/>
+      <circle id="tipMark" cx="353.5" cy="46.2" r="1" fill="none"/>
+      <g class="orbit">
+        <circle cx="379.5" cy="46.2" r="3.5" fill="#ffffff"/>
+        <circle cx="329.5" cy="46.2" r="3" fill="#7fd3ff"/>
+        <circle cx="353.5" cy="16.2" r="2.8" fill="#ff7a6b"/>
+        <circle cx="367.5" cy="24.2" r="2.4" fill="#ffffff"/>
+      </g>
+      <circle class="glow" cx="353.5" cy="46.2" r="9" fill="#ffffff"/>
+    </g>
+  </g>
+  <g class="pen" id="pen">
+    <rect x="-7" y="-56" width="14" height="10" rx="2" fill="#e27f66" stroke="#3a2b22" stroke-width="2"/>
+    <rect x="-7" y="-46" width="14" height="34" fill="#f2b33d" stroke="#3a2b22" stroke-width="2"/>
+    <path d="M-7 -12 L7 -12 L0 0 Z" fill="#f3d9bd" stroke="#3a2b22" stroke-width="2" stroke-linejoin="round"/>
+    <path d="M-2.2 -4 L2.2 -4 L0 0 Z" fill="#3a2b22"/>
+  </g>
+</svg>
+  <button class="skip-btn" id="skipBtn" type="button">건너뛰기</button>
+
+  <div class="page" id="page">
+  <main class="board">
+    <div class="date" id="today"></div>
+    <svg class="bell" viewBox="0 0 64 64" fill="none" stroke="#c98a12" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M32 6v4"/>
+      <path d="M14 46c0-12 4-22 18-22s18 10 18 22l4 6H10z"/>
+      <path d="M26 56a6 6 0 0 0 12 0"/>
+      <circle cx="32" cy="8" r="2" fill="#c98a12"/>
+    </svg>
+    <h1>dasomaries-lion5의 교실</h1>
+    <svg class="underline" viewBox="0 0 300 14" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M4 9 C 70 2, 150 14, 296 5"/>
+    </svg>
+    <p class="tagline">오늘도 환영해요, 자리에 앉아 주세요</p>
+    <nav class="timetable" aria-label="홈페이지 바로가기">
+      <button class="subject profile-toggle" type="button" aria-expanded="false" aria-controls="profile">
+        <span class="period">1교시</span>
+        <strong>강사 프로필</strong>
+        <span class="desc">선생님 소개 펼쳐 보기</span>
+      </button>
+      <a class="subject second" href="https://github.com/dasomaries-lion5?tab=repositories" target="_blank" rel="noopener">
+        <span class="period">2교시</span>
+        <strong>레포지토리</strong>
+        <span class="desc">진행 중인 프로젝트 모아보기</span>
+      </a>
+    </nav>
+    <section class="profile" id="profile" hidden>
+      <div class="avatar" id="pAvatar" aria-hidden="true">D</div>
+      <div class="pbody">
+        <p class="pname"><span id="pName">dasomaries-lion5</span><span class="pbadge" id="pRole">강사</span></p>
+        <p class="pbio" id="pBio">교실에서 이것저것 만들고 나누는 강사예요.</p>
+        <div class="ptags" id="pTags"></div>
+        <div id="pLinks"><a class="plink" href="https://github.com/dasomaries-lion5" target="_blank" rel="noopener">GitHub 프로필 보러 가기</a></div>
+      </div>
+    </section>
+    <div class="notice"><b>알림장</b> 홈페이지는 GitHub Pages로 운영 중이에요. 궁금한 점은 GitHub에서 찾아 주세요.</div>
+    <footer>&copy; <span id="year"></span> dasomaries-lion5 · 수업 끝 종은 언제든 울려요</footer>
+  </main>
+  </div>
+
+  <script>
+    // 인트로 1: 글자 쪼개기
+    var introTitle = document.getElementById("introTitle");
+    var introText = introTitle.textContent;
+    introTitle.textContent = "";
+    Array.prototype.forEach.call(introText, function (ch, i) {
+      var s = document.createElement("span");
+      s.className = "ch";
+      s.style.setProperty("--i", i);
+      s.textContent = ch === " " ? "\u00A0" : ch;
+      introTitle.appendChild(s);
+    });
+
+    // 인트로 1: 먼지
+    var intro = document.getElementById("intro");
+    for (var i = 0; i < 26; i++) {
+      var d = document.createElement("span");
+      d.className = "dust";
+      d.style.left = Math.random() * 100 + "%";
+      d.style.top = Math.random() * 100 + "%";
+      d.style.animationDelay = (-Math.random() * 6) + "s";
+      d.style.width = d.style.height = (2 + Math.random() * 4) + "px";
+      intro.prepend(d);
+    }
+
+    document.getElementById("skipBtn").addEventListener("click", function () {
+      document.body.classList.add("skip");
+    });
+
+    // ── 인트로 타임라인 (ms). CSS의 --reveal-at / --page-at 과 함께 조절하세요 ──
+    var T = { teacher: 1800, draw: 1250, wave: 3100, move: 3350, magic: 3850, reveal: 4000, done: 5600 };
+    var t0 = performance.now();
+    function at(ms, fn) { setTimeout(fn, Math.max(0, ms - (performance.now() - t0))); }
+
+    var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var teacher = document.getElementById("teacher");
+    var pen = document.getElementById("pen");
+    var armR = document.getElementById("armR");
+    var tipMark = document.getElementById("tipMark");
+    var intro2El = document.getElementById("intro2");
+    var root = document.documentElement;
+    root.style.setProperty('--sx','12%'); root.style.setProperty('--sy','78%');
+
+    // 선 준비: 펜이 따라 그릴 수 있도록 길이 계산
+    var lines = Array.prototype.map.call(teacher.querySelectorAll(".ln"), function (el) {
+      el.removeAttribute("pathLength");
+      var L = el.getTotalLength();
+      var order = parseFloat(el.style.getPropertyValue("--d")) || 0;
+      el.style.strokeDasharray = L + " " + L;
+      el.style.strokeDashoffset = L;
+      return { el: el, L: L, order: order };
+    }).sort(function (a, b) { return a.order - b.order; });
+
+    // 전체 그리기 시간을 T.draw 로 맞추고, 획마다 길이에 비례해 배분 (짧은 획도 최소 시간 보장)
+    var totalL = lines.reduce(function (s, o) { return s + o.L; }, 0);
+    var cursor = 0;
+    var segs = lines.map(function (o) {
+      var dur = Math.max(14, (o.L / totalL) * T.draw);
+      var seg = { el: o.el, L: o.L, s: cursor, e: cursor + dur };
+      cursor += dur * 0.92; // 살짝 겹쳐서 손이 멈칫하지 않게
+      return seg;
+    });
+    var drawTotal = cursor + 40;
+    var easeInOut = function (p) { return 0.5 - 0.5 * Math.cos(Math.PI * p); };
+    var colored = false;
+
+    function drawStep(start) {
+      return function step(now) {
+        var t = now - start;
+        var active = null;
+        for (var k = 0; k < segs.length; k++) {
+          var s = segs[k];
+          if (t < s.s) { s.el.style.strokeDashoffset = s.L; continue; }
+          if (t >= s.e) { s.el.style.strokeDashoffset = 0; continue; }
+          var p = easeInOut((t - s.s) / (s.e - s.s));
+          s.el.style.strokeDashoffset = s.L * (1 - p);
+          active = { s: s, p: p };
+        }
+        if (active) {
+          var len = active.s.L * active.p;
+          var a = active.s.el.getPointAtLength(len);
+          var b = active.s.el.getPointAtLength(Math.min(active.s.L, len + 2));
+          var ang = Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI - 90;
+          pen.setAttribute("transform", "translate(" + a.x + " " + a.y + ") rotate(" + ang + ")");
+          pen.style.opacity = 1;
+        } else {
+          pen.style.opacity = 0;
+        }
+        // 그리는 도중에 색이 따라 스며들게 (그림이 끝나길 기다리지 않음)
+        if (!colored && t > drawTotal * 0.55) { colored = true; colorize(); }
+        if (t < drawTotal) requestAnimationFrame(step);
+        else pen.style.opacity = 0;
+      };
+    }
+
+    function colorize() {
+      Array.prototype.forEach.call(teacher.querySelectorAll(".c"), function (el, i) {
+        el.style.animation = "fillIn .55s cubic-bezier(.22,1,.36,1) " + (i * 0.03).toFixed(2) + "s forwards";
+      });
+    }
+
+    // 선생님의 도착 위치와, 그 손끝 좌표 → 교실이 번져 나올 중심점
+    function computeMove() {
+      var r = teacher.getBoundingClientRect();
+      var cx = r.left + r.width / 2;
+      var cy = r.top + r.height / 2;
+      var wide = window.innerWidth >= 1000;
+      var tx = wide ? Math.max(130, (window.innerWidth - 720) / 4) : 62;
+      var ty = wide ? window.innerHeight * 0.7 : window.innerHeight - 120;
+      var tw = wide ? 190 : 104;
+      root.style.setProperty("--dx", (tx - cx) + "px");
+      root.style.setProperty("--dy", (ty - cy) + "px");
+      root.style.setProperty("--ds", (tw / r.width).toFixed(3));
+      var k = tw / 400; // svg 한 단위가 화면에서 차지하는 크기
+      root.style.setProperty("--sx", (tx + (353.5 - 200) * k) + "px");
+      root.style.setProperty("--sy", (ty + (46.2 - 250) * k) + "px");
+    }
+    computeMove();
+
+    // 교실이 선생님 손끝에서 부드러운 경계로 번져 나오는 마스크
+    var pageEl = document.getElementById("page");
+    var MASK = "radial-gradient(circle at var(--sx) var(--sy), #000 calc(var(--r) - 160px), transparent var(--r))";
+    function revealPage() {
+      var sx = parseFloat(root.style.getPropertyValue("--sx")), sy = parseFloat(root.style.getPropertyValue("--sy"));
+      var W = window.innerWidth, H = window.innerHeight;
+      var far = Math.max(Math.hypot(sx, sy), Math.hypot(W - sx, sy), Math.hypot(sx, H - sy), Math.hypot(W - sx, H - sy));
+      var anim = pageEl.animate(
+        [{ "--r": "0px" }, { "--r": (far + 200) + "px" }],
+        { duration: 1300, easing: "cubic-bezier(.4,.05,.25,1)", fill: "forwards" }
+      );
+      anim.onfinish = function () {
+        pageEl.style.webkitMaskImage = pageEl.style.maskImage = "";
+        anim.cancel();
+      };
+    }
+
+    if (!reduceMotion) {
+      pageEl.style.setProperty("--r", "0px");
+      pageEl.style.webkitMaskImage = pageEl.style.maskImage = MASK;
+      pageEl.style.maskImage = MASK;
+      at(T.reveal, revealPage);
+      at(T.teacher, function () { requestAnimationFrame(drawStep(performance.now())); });
+      at(T.wave, function () { armR.classList.add("wave"); });
+      at(T.move, function () { computeMove(); teacher.classList.add("move"); });
+      at(T.magic, function () { teacher.classList.add("magic"); });
+      at(T.done, function () {
+        intro2El.style.display = "none";
+        teacher.classList.remove("magic");
+      });
+    }
+
+    // 강사 프로필: profile.json 에서 내용을 읽어 표시 (편집: edit.html)
+    function safeLink(u) { return /^https?:\/\//.test(u || "") ? u : ""; }
+    fetch("profile.json?v=" + Date.now()).then(function (r) { if (!r.ok) throw new Error(); return r.json(); }).then(function (j) {
+      if (j.name) document.getElementById("pName").textContent = j.name;
+      if (j.role) document.getElementById("pRole").textContent = j.role;
+      if (j.bio) document.getElementById("pBio").textContent = j.bio;
+      var av = document.getElementById("pAvatar");
+      if (j.photo && /^data:image\//.test(j.photo)) { av.innerHTML = ""; var im = document.createElement("img"); im.src = j.photo; im.alt = ""; av.appendChild(im); }
+      else if (j.name) { av.textContent = j.name.charAt(0).toUpperCase(); }
+      var tg = document.getElementById("pTags"); tg.innerHTML = "";
+      (j.tags || []).forEach(function (t) { var s = document.createElement("span"); s.textContent = t; tg.appendChild(s); });
+      var pl = document.getElementById("pLinks"); pl.innerHTML = "";
+      (j.links || []).forEach(function (l) {
+        var u = safeLink(l.url); if (!u) return;
+        var a = document.createElement("a"); a.className = "plink"; a.href = u; a.target = "_blank"; a.rel = "noopener";
+        a.textContent = l.label || u; pl.appendChild(a);
+      });
+    }).catch(function () { /* 파일이 없으면 기본 내용 유지 */ });
+    var profToggle = document.querySelector(".profile-toggle");
+    var profPanel = document.getElementById("profile");
+    profToggle.addEventListener("click", function () {
+      var open = profPanel.hidden;
+      profPanel.hidden = !open;
+      profToggle.setAttribute("aria-expanded", String(open));
+    });
+
+    document.getElementById("year").textContent = new Date().getFullYear();
+    var now = new Date();
+    var days = ["일", "월", "화", "수", "목", "금", "토"];
+    document.getElementById("today").innerHTML =
+      now.getFullYear() + "년 " + (now.getMonth() + 1) + "월 " + now.getDate() + "일 <b>" + days[now.getDay()] + "요일</b>";
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dasomaries-lion5 | 교실</title>
+  <meta name="description" content="dasomaries-lion5의 교실, 홈페이지">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f4ead7;
+      --paper: #fbf5e8;
+      --ink: #3d3126;
+      --ink-dim: #7a6a57;
+      --accent: #f2b33d;
+      --accent-dark: #c98a12;
+      --coral: #e07a5f;
+      --coral-dark: #b85a40;
+      --sky: #6fb7d9;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { min-height: 100%; }
+    body {
+      font-family: "Gaegu", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .page {
+      position: relative; z-index: 5;
+      min-height: 100vh; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 32px 20px;
+      background: var(--bg);
+    }
+    .board {
+      position: relative;
+      width: 100%;
+      max-width: 720px;
+      padding: 44px 48px 36px 72px;
+      border-radius: 16px;
+      background-color: var(--paper);
+      background-image: repeating-linear-gradient(180deg, transparent 0 35px, rgb(122 106 87 / 0.14) 35px 36px);
+      background-position: 0 44px;
+      box-shadow: 0 24px 50px -24px rgb(61 49 38 / 0.45), 0 2px 0 rgb(61 49 38 / 0.04);
+      text-align: center;
+    }
+    .board::before {
+      content: "";
+      position: absolute; top: 0; bottom: 0; left: 52px; width: 2px;
+      background: rgb(224 122 95 / 0.55);
+      border-radius: 2px;
+    }
+    .board::after {
+      content: "";
+      position: absolute; left: 0; right: 0; top: 0; height: 10px;
+      border-radius: 16px 16px 0 0;
+      background: var(--accent);
+      opacity: 0.85;
+    }
+    .date { font-size: 18px; color: var(--ink-dim); letter-spacing: 0.02em; }
+    .date b { color: var(--accent-dark); font-weight: 700; }
+    .bell { display: block; width: 64px; height: 64px; margin: 10px auto 6px; }
+    h1 {
+      margin: 14px 0 6px;
+      font-size: clamp(38px, 6vw, 58px);
+      font-weight: 700;
+      line-height: 1.15;
+    }
+    .underline { display: block; width: 62%; height: 14px; margin: 0 auto 20px; }
+    .underline path {
+      fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round;
+      stroke-dasharray: 300; stroke-dashoffset: 300;
+    }
+    .tagline { font-size: 22px; color: var(--ink-dim); }
+    .timetable { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 36px 0 30px; }
+    .subject {
+      position: relative;
+      display: block;
+      padding: 22px 20px 18px;
+      background: #fffdf7;
+      border: 2px solid rgb(61 49 38 / 0.12);
+      border-radius: 14px;
+      color: var(--ink);
+      text-decoration: none;
+      box-shadow: 0 6px 0 -2px rgb(61 49 38 / 0.08);
+      transition: transform .45s var(--ease), border-color .45s var(--ease), box-shadow .45s var(--ease);
+    }
+    .subject:hover, .subject:focus-visible {
+      transform: translateY(-4px) rotate(-1deg);
+      border-color: var(--accent);
+      box-shadow: 0 14px 24px -14px rgb(61 49 38 / 0.45);
+    }
+    .period {
+      display: inline-block; padding: 2px 12px; border-radius: 999px;
+      font-size: 15px; font-weight: 700; color: var(--ink); background: var(--accent);
+    }
+    .subject.second .period { background: var(--sky); }
+    .subject strong { display: block; margin-top: 12px; font-size: 24px; }
+    .subject span.desc { display: block; margin-top: 4px; font-size: 16px; color: var(--ink-dim); }
+    .notice {
+      margin: 0 auto;
+      max-width: 460px;
+      padding: 14px 18px;
+      font-size: 17px;
+      color: var(--ink);
+      background: #fffdf7;
+      border-radius: 10px;
+      border: 1px solid rgb(61 49 38 / 0.1);
+      border-left: 5px solid var(--coral);
+      text-align: left;
+    }
+    .notice b { color: var(--coral-dark); }
+    footer { margin-top: 28px; font-size: 15px; color: var(--ink-dim); }
+
+    /* ── 인트로 1 ── */
+    .intro {
+      position: fixed; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      background: radial-gradient(ellipse at 50% 40%, #fff8e0 0%, rgb(255 248 224 / 0) 60%), var(--bg);
+      overflow: hidden; color: var(--ink);
+    }
+    .dust {
+      position: absolute; width: 4px; height: 4px; border-radius: 50%;
+      background: rgb(140 100 60 / 0.35); filter: blur(0.5px);
+      animation: float 6s ease-in-out infinite;
+    }
+    .stage1 { position: relative; width: 150px; height: 150px; display: grid; place-items: center; }
+    .ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgb(242 179 61 / 0.7); opacity: 0; }
+    .intro-bell { width: 92px; height: 92px; transform-origin: 50% 0; position: relative; }
+    .intro-bell path {
+      stroke: var(--accent-dark); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;
+      stroke-dasharray: 1 1;
+    }
+    .intro-bell circle { fill: var(--accent-dark); opacity: 0; }
+    .intro-title {
+      position: relative;
+      font-size: clamp(34px, 6vw, 52px); font-weight: 700; letter-spacing: 0.04em;
+      display: flex; gap: 0.12em; justify-content: center; margin-top: 18px;
+    }
+    .intro-title .ch { display: inline-block; }
+    .intro-sub { font-size: 20px; color: var(--ink-dim); opacity: 0; }
+    .flash {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0;
+      background: radial-gradient(circle at 50% 40%, rgb(255 252 240 / 0.9), rgb(255 252 240 / 0.25) 45%, transparent 70%);
+    }
+
+    /* ── 인트로 2 ── */
+    .intro2 { position: fixed; inset: 0; z-index: 4; background: var(--paper); }
+    .tiles { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+    .tile { position: absolute; background: var(--paper); }
+    .tile.flying { box-shadow: 0 8px 16px -6px rgb(61 49 38 / 0.35); border-radius: 4px; }
+    .spread {
+      position: fixed; inset: 0; z-index: 7; background: #ffd23f;
+      clip-path: circle(0px at var(--sx, 50%) var(--sy, 50%));
+      visibility: hidden;
+    }
+    .teacher {
+      position: fixed; left: 50%; top: 50%; z-index: 8;
+      width: min(340px, 78vw); height: auto;
+      transform: translate(-50%, -50%);
+      overflow: visible; pointer-events: none;
+    }
+    .ln { fill: none; stroke: var(--ink); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+    .c { fill-opacity: 0; }
+    .halo { fill-opacity: 0; }
+    .pen { opacity: 0; }
+    .armR { transform-box: view-box; transform-origin: 252px 224px; }
     .glow { transform-box: fill-box; transform-origin: center; transform: scale(0); }
     .orbit { opacity: 0; transform-box: fill-box; transform-origin: center; }
     .teacher.magic .orbit { opacity: 1; animation: spin 1.4s linear infinite; }
